@@ -2,6 +2,7 @@
 import SelectionTag from '../SelectionTag.astro';
 import Star from '../Star.astro';
 import ProjectPreview from './ProjectPreview.astro';
+import Starfield from '../Starfield.astro';
 import { featuredProject, type Category } from '../../data/projects';
 
 // Positions are percentages of the hero area, taken from the Figma design.
@@ -29,6 +30,8 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 
 <section class="hero" aria-label="Intro" data-hero>
 	<h1 class="visually-hidden">Femke De Latter — design portfolio</h1>
+
+	<Starfield count={170} seed={3} parallax />
 
 	{tags.map(({ label, x, y, depth, category }, i) => {
 		const previewId = category && `preview-${category}`;

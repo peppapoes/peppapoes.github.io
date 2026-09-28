@@ -1,0 +1,107 @@
+---
+/**
+ * A field of tiny dots. Most are small and faint (far away), a few larger and
+ * brighter (close by), and some twinkle softly. Positions are random but seeded,
+ * so every build places them in the same spots.
+ *
+ * With `parallax`, the far and near dots drift with the hero's --mx/--my.
+ */
+interface Props {
+	count: number;
+	seed?: number;
+	parallax?: boolean;
+	class?: string;
+}
+
+const { count, seed = 1, parallax = false, class: className } = Astro.props;
+
+// Small seeded random generator (mulberry32).
+const random = (() => {
+	let a = seed;
+	return () => {
+		a = (a + 0x6d2b79f5) | 0;
+		let t = Math.imul(a ^ (a >>> 15), 1 | a);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+})();
+
+const dots = Array.from({ length: count }, () => {
+	const closeness = random() ** 2.5; // skewed: most dots are far away
+	return {
+		x: (random() * 100).toFixed(2),
+		y: (random() * 100).toFixed(2),
+		r: (0.5 + closeness * 1.1).toFixed(2),
+		opacity: (0.12 + closeness * 0.7).toFixed(2),
+		near: closeness > 0.25,
+		twinkle: random() < 0.18,
+		delay: (random() * 8).toFixed(1),
+		duration: (3 + random() * 4).toFixed(1),
+	};
+});
+
+const layers = [dots.filter((d) => !d.near), dots.filter((d) => d.near)];
+---
+
+<svg class:list={['starfield', { 'starfield--parallax': parallax }, className]} aria-hidden="true">
+	{layers.map((layer, i) => (
+		<g class:list={['starfield__layer', i ? 'starfield__layer--near' : 'starfield__layer--far']}>
+			{layer.map((d) => (
+				<circle
+					class:list={{ starfield__twinkle: d.twinkle }}
+					cx={`${d.x}%`}
+					cy={`${d.y}%`}
+					r={d.r}
+					style={`--o: ${d.opacity}; --delay: -${d.delay}s; --duration: ${d.duration}s`}
+				/>
+			))}
+		</g>
+	))}
+</svg>
+
+<style>
+	.starfield {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	circle {
+		fill: var(--color-fg);
+		opacity: var(--o);
+	}
+
+	.starfield__twinkle {
+		animation: twinkle var(--duration) var(--delay) ease-in-out infinite alternate;
+	}
+
+	@keyframes twinkle {
+		from { opacity: var(--o); }
+		to { opacity: calc(var(--o) * 0.25); }
+	}
+
+	.starfield--parallax .starfield__layer {
+		transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.starfield--parallax .starfield__layer--far {
+		transform: translate(calc(var(--mx, 0) * 4px), calc(var(--my, 0) * 4px));
+	}
+
+	.starfield--parallax .starfield__layer--near {
+		transform: translate(calc(var(--mx, 0) * 10px), calc(var(--my, 0) * 10px));
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.starfield__twinkle {
+			animation: none;
+		}
+
+		.starfield--parallax .starfield__layer {
+			transform: none;
+		}
+	}
+</style>

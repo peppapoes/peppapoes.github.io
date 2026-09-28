@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Starfield from '../components/Starfield.astro';
 
 interface Props {
 	title?: string;
@@ -31,6 +32,7 @@ const {
 		<title>{title}</title>
 	</head>
 	<body>
+		<Starfield count={110} seed={7} class="site-stars" />
 		<Header />
 		<main>
 			<slot />
@@ -68,6 +70,12 @@ const {
 	body {
 		margin: 0;
 		overflow-x: hidden;
+	}
+
+	/* Stays put while the page scrolls, like a far-away night sky behind everything. */
+	.site-stars {
+		position: fixed !important;
+		z-index: -1;
 	}
 
 	img {
