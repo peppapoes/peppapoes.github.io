@@ -160,7 +160,8 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			});
 			item.addEventListener('pointerleave', (e) => {
 				if (e.pointerType !== 'mouse' || item === pinned) return;
-				closeTimer = window.setTimeout(() => setOpen(item, false), 150);
+				// A short delay gives the mouse time to cross the gap into the preview.
+				closeTimer = window.setTimeout(() => setOpen(item, false), 300);
 			});
 		}
 

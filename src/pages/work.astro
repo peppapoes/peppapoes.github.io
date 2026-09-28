@@ -16,7 +16,7 @@ const stars = [
 ] as const;
 ---
 
-<Layout title="My Work — FDSGNS" description="Projects by Femke De Latter: visual design, creative coding, experience design and more.">
+<Layout title="My Work — FDSGNS" description="Projects by Femke De Latter: visual design, creative coding, motion design and more.">
 	<div class="work">
 		{stars.map(({ x, y, size, variant, ...star }, i) => (
 			<Star
@@ -62,7 +62,8 @@ const stars = [
 		--list-start: 30vw;
 		position: relative;
 		display: grid;
-		grid-template-columns: var(--list-start) 1fr;
+		/* minmax(0, …) stops the full-width gallery from stretching the list column. */
+		grid-template-columns: var(--list-start) minmax(0, 1fr);
 		align-items: start;
 		padding: clamp(2rem, 5vw, 5rem) var(--gutter) clamp(6rem, 12vw, 10rem) 0;
 	}
@@ -115,7 +116,7 @@ const stars = [
 	@media (max-width: 800px) {
 		.work {
 			--list-start: var(--gutter);
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 			row-gap: 3rem;
 			padding-left: var(--gutter);
 		}

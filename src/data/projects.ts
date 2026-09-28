@@ -1,13 +1,13 @@
 import type { ImageMetadata } from 'astro';
 import milesAndMeals from '../assets/images/milesandmeals_preview.jpg';
+import kickstarter from '../assets/images/kickstarter_preview.jpg';
 
-export type Category = 'visual-design' | 'motion-design' | 'coding' | 'experience-design' | 'integration';
+export type Category = 'visual-design' | 'motion-design' | 'coding' | 'integration';
 
 export const categoryLabels: Record<Category, string> = {
 	'visual-design': 'Visual design',
 	'motion-design': 'Motion design',
 	coding: 'Creative coding',
-	'experience-design': 'Experience Design',
 	integration: 'Integration',
 };
 
@@ -53,12 +53,12 @@ export const projects: Project[] = [
 			'The word “game” always makes me happy. I love giving users something interactive to do with my digital work, whether it’s small interactions on a website or full-on conversations with Napoleon Bonaparte in a Figma prototype, as long as there’s an experience to be had. For this project, I created a cat-themed click game called CatVolution, where cats evolve based on your clicks and merges. I also added upgrades and a “golden poop” bonus for extra clicks. Feel free to play CatVolution if you’re ever bored!',
 	},
 	{
-		slug: 'case-study',
-		title: 'Case study',
-		category: 'experience-design',
+		slug: 'kickstarter',
+		title: 'Kickstarter',
+		category: 'motion-design',
 		year: 2025,
-		preview: milesAndMeals,
-		previewAlt: 'Preview of the experience design case study',
+		preview: kickstarter,
+		previewAlt: 'Preview of the Kickstarter motion design project',
 	},
 	{
 		slug: 'antwerp-on-tap',

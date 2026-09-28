@@ -17,26 +17,28 @@ const href = project && projectUrl(project);
 ---
 
 <div id={id} class="preview" role="region" aria-label={project?.title ?? 'Coming soon'}>
-	<SelectionFrame class="preview__frame">
-		{project
-			? <Image src={project.preview} alt={project.previewAlt} widths={[400, 600]} sizes="(max-width: 640px) 90vw, 26rem" />
-			: <p class="preview__soon">project coming soon</p>}
-	</SelectionFrame>
+	{project ? (
+		<a class="preview__link" href={href} aria-label={`View ${project.title}`}>
+			<SelectionFrame class="preview__frame">
+				<Image src={project.preview} alt="" widths={[400, 600]} sizes="(max-width: 640px) 90vw, 26rem" />
+			</SelectionFrame>
 
-	{project && (
-		<div class="preview__info">
-			<ul class="preview__meta">
-				<li>{project.previewTitle ?? project.title}</li>
-				<li>{project.year} assignment</li>
-				<li>{project.tagline ?? categoryLabels[project.category]}</li>
-			</ul>
+			<span class="preview__info">
+				<span class="preview__meta">
+					<span>{project.previewTitle ?? project.title}</span>
+					<span>{project.year} assignment</span>
+					<span>{project.tagline ?? categoryLabels[project.category]}</span>
+				</span>
 
-			<a class="preview__arrow" href={href} aria-label={`View ${project.title}`}>
-				<svg viewBox="0 0 100 16" aria-hidden="true">
+				<svg class="preview__arrow" viewBox="0 0 100 16" aria-hidden="true">
 					<path d="M0 8H98M90 1l8 7-8 7" />
 				</svg>
-			</a>
-		</div>
+			</span>
+		</a>
+	) : (
+		<SelectionFrame class="preview__frame">
+			<p class="preview__soon">project coming soon</p>
+		</SelectionFrame>
 	)}
 </div>
 
@@ -67,6 +69,12 @@ const href = project && projectUrl(project);
 		font-size: 1.2rem;
 	}
 
+	.preview__link {
+		display: block;
+		color: inherit;
+		text-decoration: none;
+	}
+
 	.preview__info {
 		display: flex;
 		align-items: flex-start;
@@ -78,27 +86,35 @@ const href = project && projectUrl(project);
 	.preview__meta {
 		display: grid;
 		gap: 0.35rem;
-		margin: 0;
-		padding: 0;
-		list-style: none;
 		font-family: var(--font-hand);
 		font-size: 1.05rem;
 	}
 
 	.preview__arrow {
+		flex: 0 0 auto;
 		width: 6.5rem;
 		margin-top: 0.4rem;
-		transition: translate 0.2s ease;
-	}
-
-	.preview__arrow:hover {
-		translate: 0.4rem 0;
-	}
-
-	.preview__arrow svg {
-		display: block;
 		fill: none;
 		stroke: currentColor;
 		stroke-width: 1.5;
+		transition: translate 0.3s ease;
+	}
+
+	.preview__link:hover .preview__arrow,
+	.preview__link:focus-visible .preview__arrow {
+		translate: 0.5rem 0;
+	}
+
+	.preview__link img {
+		transition: scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.preview__link:hover img {
+		scale: 1.03;
+	}
+
+	.preview__link:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 6px;
 	}
 </style>
