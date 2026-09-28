@@ -3,7 +3,7 @@ import SelectionTag from '../SelectionTag.astro';
 import Star from '../Star.astro';
 import ProjectPreview from './ProjectPreview.astro';
 import Starfield from '../Starfield.astro';
-import { featuredProject, type Category } from '../../data/projects';
+import { featuredProject, projectUrl, type Category } from '../../data/projects';
 
 // Positions are percentages of the hero area, taken from the Figma design.
 // `depth` sets how far an element drifts with the mouse: higher feels closer.
@@ -34,24 +34,21 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 	<Starfield count={170} seed={3} parallax />
 
 	{tags.map(({ label, x, y, depth, category }, i) => {
-		const previewId = category && `preview-${category}`;
+		const project = category && featuredProject(category);
 		return (
 			<div
 				class:list={['float', { 'float--end': x > 40 }]}
 				style={floatStyle(x, y, depth, i)}
-				data-float
-				data-item={previewId ? '' : undefined}
+				data-item={project ? '' : undefined}
 			>
 				<div class="float__inner">
-					{previewId ? (
+					{project ? (
 						<>
-							<SelectionTag button aria-expanded="false" aria-controls={previewId}>
-								{label}
-							</SelectionTag>
+							<SelectionTag href={projectUrl(project)}>{label}</SelectionTag>
 							<div
 								class:list={['float__panel', { 'float__panel--up': y >= 50, 'float__panel--left': x > 45 }]}
 							>
-								<ProjectPreview id={previewId} project={featuredProject(category)} />
+								<ProjectPreview id={`preview-${category}`} project={project} />
 							</div>
 						</>
 					) : (
@@ -63,7 +60,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 	})}
 
 	{stars.map(({ x, y, size, variant, depth }, i) => (
-		<div class="float float--star" style={floatStyle(x, y, depth, i + tags.length)} data-float>
+		<div class="float float--star" style={floatStyle(x, y, depth, i + tags.length)}>
 			<div class="float__inner">
 				<Star variant={variant} size={`max(${size}, 1rem)`} />
 			</div>
@@ -75,10 +72,8 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 	const hero = document.querySelector<HTMLElement>('[data-hero]');
 
 	if (hero) {
-		const floats = [...hero.querySelectorAll<HTMLElement>('[data-float]')];
 		const items = [...hero.querySelectorAll<HTMLElement>('[data-item]')];
 		const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-		let pinned: HTMLElement | null = null;
 		let closeTimer: number | undefined;
 
 		// Everything drifts a little with the mouse, closer elements a bit more.
@@ -95,92 +90,29 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			});
 		}
 
-		const setOpen = (item: HTMLElement, open: boolean) => {
-			item.toggleAttribute('data-open', open);
-			item.querySelector('button')?.setAttribute('aria-expanded', String(open));
-		};
+		const show = (item: HTMLElement | null) => items.forEach((other) => other.toggleAttribute('data-open', other === item));
 
-		const GAP = 24; // breathing room kept around the pinned preview
-		const NEARBY = 140; // elements this close to it get a gentle nudge
-		const MAX_PUSH = 90; // keeps the movement subtle, even for elements right under the preview
-		const pushes = new Map<HTMLElement, { x: number; y: number }>();
-		const phone = matchMedia('(max-width: 640px)'); // preview is centered on screen there
-
-		// Move the other elements out of the pinned preview's way so it floats in between them.
-		const makeRoom = () => {
-			const panel = phone.matches ? undefined : pinned?.querySelector('.float__panel')?.getBoundingClientRect();
-			for (const el of floats) {
-				let x = 0;
-				let y = 0;
-				if (panel && el !== pinned) {
-					// Measure where the element would be without its current push.
-					const prev = pushes.get(el) ?? { x: 0, y: 0 };
-					const box = el.getBoundingClientRect();
-					const r = { left: box.left - prev.x, right: box.right - prev.x, top: box.top - prev.y, bottom: box.bottom - prev.y };
-					const p = { left: panel.left - GAP, right: panel.right + GAP, top: panel.top - GAP, bottom: panel.bottom + GAP };
-					const toRight = (r.left + r.right) / 2 > (p.left + p.right) / 2;
-					const toBottom = (r.top + r.bottom) / 2 > (p.top + p.bottom) / 2;
-					const overlaps = r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top;
-
-					if (overlaps) {
-						// Slide out along whichever axis needs the smallest move.
-						const needX = toRight ? p.right - r.left : r.right - p.left;
-						const needY = toBottom ? p.bottom - r.top : r.bottom - p.top;
-						if (needX < needY) x = (toRight ? 1 : -1) * Math.min(needX, MAX_PUSH);
-						else y = (toBottom ? 1 : -1) * Math.min(needY, MAX_PUSH);
-					} else {
-						const dx = Math.max(p.left - r.right, 0, r.left - p.right);
-						const dy = Math.max(p.top - r.bottom, 0, r.top - p.bottom);
-						const strength = Math.max(0, 1 - Math.hypot(dx, dy) / NEARBY) * 30;
-						x = (toRight ? 1 : -1) * (dx > 0 ? strength : 0);
-						y = (toBottom ? 1 : -1) * (dy > 0 ? strength : 0);
-					}
-				}
-				pushes.set(el, { x, y });
-				el.style.setProperty('--push-x', `${x}px`);
-				el.style.setProperty('--push-y', `${y}px`);
-			}
-		};
-
-		const pin = (item: HTMLElement | null) => {
-			items.forEach((other) => setOpen(other, other === item));
-			pinned?.removeAttribute('data-pinned');
-			pinned = item;
-			pinned?.setAttribute('data-pinned', '');
-			makeRoom();
-		};
-
+		// Hovering (or tabbing to) a tag peeks at its project; clicking the tag goes straight to it.
 		for (const item of items) {
-			const button = item.querySelector('button')!;
-
-			button.addEventListener('click', () => pin(pinned === item ? null : item));
-
-			// Hovering peeks at the preview; clicking pins it.
 			item.addEventListener('pointerenter', (e) => {
-				if (e.pointerType !== 'mouse' || pinned) return;
+				if (e.pointerType !== 'mouse') return;
 				clearTimeout(closeTimer);
-				items.forEach((other) => setOpen(other, other === item));
+				show(item);
 			});
 			item.addEventListener('pointerleave', (e) => {
-				if (e.pointerType !== 'mouse' || item === pinned) return;
+				if (e.pointerType !== 'mouse') return;
 				// A short delay gives the mouse time to cross the gap into the preview.
-				closeTimer = window.setTimeout(() => setOpen(item, false), 300);
+				closeTimer = window.setTimeout(() => item.removeAttribute('data-open'), 300);
+			});
+			item.addEventListener('focusin', () => show(item));
+			item.addEventListener('focusout', (e) => {
+				if (!item.contains(e.relatedTarget as Node)) item.removeAttribute('data-open');
 			});
 		}
 
-		// Clicking anywhere but the open preview or its tag closes it (including the dimmed area on phones).
-		document.addEventListener('click', (e) => {
-			if (pinned && !(e.target as Element).closest('[data-pinned] .float__panel, [data-pinned] button')) pin(null);
-		});
-
 		document.addEventListener('keydown', (e) => {
-			if (e.key !== 'Escape') return;
-			const open = pinned;
-			pin(null);
-			open?.querySelector('button')?.focus();
+			if (e.key === 'Escape') show(null);
 		});
-
-		addEventListener('resize', () => pinned && makeRoom());
 	}
 </script>
 
@@ -195,9 +127,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 
 	.float {
 		position: absolute;
-		translate:
-			calc(var(--mx) * var(--depth) * 1px + var(--push-x, 0px))
-			calc(var(--my) * var(--depth) * 1px + var(--push-y, 0px));
+		translate: calc(var(--mx) * var(--depth) * 1px) calc(var(--my) * var(--depth) * 1px);
 		transition: translate 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 	}
 
@@ -281,6 +211,13 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		}
 	}
 
+	/* Without a mouse there's no hover: tapping a tag just opens the project. */
+	@media (hover: none) {
+		.float__panel {
+			display: none;
+		}
+	}
+
 	@media (max-width: 640px) {
 		.hero {
 			height: 30rem;
@@ -292,37 +229,9 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			right: var(--gutter);
 		}
 
-		/* No room next to the tag on phones: show the preview centered on screen.
-		   Fixed positioning needs the open item's ancestors to be untransformed. */
 		.float {
 			translate: none;
 			transition: none;
-		}
-
-		.float[data-open] .float__inner {
-			animation: none;
-		}
-
-		.float[data-open] {
-			z-index: 20;
-		}
-
-		.float[data-open]::before {
-			content: '';
-			position: fixed;
-			inset: 0;
-			background: rgb(0 0 0 / 0.7);
-		}
-
-		.float__panel,
-		.float__panel--up,
-		.float__panel--left {
-			position: fixed;
-			inset: 0;
-			width: fit-content;
-			height: fit-content;
-			margin: auto;
-			transform-origin: center;
 		}
 	}
 </style>
