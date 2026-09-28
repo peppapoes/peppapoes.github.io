@@ -32,6 +32,17 @@ const { project } = Astro.props;
 	</summary>
 
 	<div class="row__content">
+		{project.video && (
+			<video
+				class="row__video"
+				src={`${project.video}#t=0.1`}
+				controls
+				playsinline
+				preload="metadata"
+				aria-label={`${project.title} video`}
+			/>
+		)}
+
 		{(project.assignment || project.idea) && (
 			<div class="row__text">
 				{project.assignment && (
@@ -49,7 +60,7 @@ const { project } = Astro.props;
 			</div>
 		)}
 
-		<ProjectGallery images={project.gallery} />
+		{(project.gallery || !project.video) && <ProjectGallery images={project.gallery} />}
 	</div>
 </details>
 
@@ -131,6 +142,17 @@ const { project } = Astro.props;
 		letter-spacing: -0.03em;
 	}
 
+	/* Spans the title and image columns, like in the design. The src ends in #t=0.1
+	   so the video's own first frame is the cover and nothing jumps when it starts. */
+	.row__video {
+		display: block;
+		width: calc(100% - max(4rem, 8vw) - 2rem);
+		aspect-ratio: 16 / 9;
+		margin-bottom: 2.5rem;
+		background: #111;
+		object-fit: cover;
+	}
+
 	.row__text {
 		display: grid;
 		gap: 2.5rem;
@@ -176,6 +198,10 @@ const { project } = Astro.props;
 			grid-row: 2;
 			width: 100%;
 			min-width: 0;
+		}
+
+		.row__video {
+			width: 100%;
 		}
 	}
 </style>

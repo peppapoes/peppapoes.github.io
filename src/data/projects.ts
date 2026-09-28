@@ -3,6 +3,7 @@ import milesAndMeals from '../assets/images/milesandmeals_preview.jpg';
 import kickstarter from '../assets/images/kickstarter_preview.jpg';
 import clickGame from '../assets/images/clickgame_preview.jpg';
 import antwerpOnTap from '../assets/images/antwerpontap_preview.jpg';
+import kickstarterVideo from '../assets/videos/kickstarter.mp4';
 
 export type Category = 'visual-design' | 'motion-design' | 'coding' | 'integration';
 
@@ -27,7 +28,9 @@ export interface Project {
 	tagline?: string;
 	assignment?: string;
 	idea?: string;
-	/** Images for the gallery on /work. Grey placeholders are shown until these are added. */
+	/** Shown large above the texts when the project is opened on /work. */
+	video?: string;
+	/** Images for the gallery on /work. Grey placeholders are shown until these are added (unless there's a video). */
 	gallery?: { src: ImageMetadata; alt: string }[];
 }
 
@@ -58,9 +61,11 @@ export const projects: Project[] = [
 		slug: 'kickstarter',
 		title: 'Kickstarter',
 		category: 'motion-design',
-		year: 2025,
+		year: 2026,
 		preview: kickstarter,
-		previewAlt: 'Preview of the Kickstarter motion design project',
+		previewAlt: 'Mug and hexagon soap bar: Second life espresso scrub, support us on Kickstarter',
+		video: kickstarterVideo,
+		assignment: 'Pick a Kickstarter project and make a promoting video for it.',
 	},
 	{
 		slug: 'antwerp-on-tap',

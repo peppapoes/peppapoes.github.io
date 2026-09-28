@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# original video exports: too large for the repo, use the compressed web versions
+src/assets/videos/2DEV_femkeDeLatter_MO2_Kickstart.mp4
