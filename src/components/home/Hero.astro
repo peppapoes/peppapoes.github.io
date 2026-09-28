@@ -5,68 +5,256 @@ import ProjectPreview from './ProjectPreview.astro';
 import { featuredProject, type Category } from '../../data/projects';
 
 // Positions are percentages of the hero area, taken from the Figma design.
-const tags: { label: string; x: number; y: number; accent?: boolean; href?: string; category?: Category }[] = [
-	{ label: 'Visual Design', x: 19, y: 22, category: 'visual-design' },
-	{ label: 'My portfolio', x: 71.5, y: 20, accent: true, href: '#work' },
-	{ label: 'Integration of all courses', x: 47, y: 50, category: 'integration' },
-	{ label: 'Motion Design', x: 76.5, y: 67, category: 'motion-design' },
-	{ label: 'Coding & Development', x: 9, y: 75, category: 'coding' },
+// `depth` sets how far an element drifts with the mouse: higher feels closer.
+const tags: { label: string; x: number; y: number; depth: number; category?: Category }[] = [
+	{ label: 'Visual Design', x: 19, y: 22, depth: 14, category: 'visual-design' },
+	{ label: 'My portfolio', x: 71.5, y: 20, depth: 10 },
+	{ label: 'Integration of all courses', x: 47, y: 50, depth: 18, category: 'integration' },
+	{ label: 'Motion Design', x: 76.5, y: 67, depth: 12, category: 'motion-design' },
+	{ label: 'Coding & Development', x: 9, y: 75, depth: 16, category: 'coding' },
 ];
 
-// A category tag becomes clickable as soon as it has a project in src/data/projects.ts.
-const items = tags.map((tag) => {
-	const project = tag.category && featuredProject(tag.category);
-	return { ...tag, project, previewId: project ? `preview-${tag.category}` : undefined };
-});
-
 const stars = [
-	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline' },
-	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled' },
-	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled' },
-	{ x: 5, y: 57, size: '2.4vw', variant: 'outline-alt' },
-	{ x: 62, y: 85, size: '2.4vw', variant: 'outline' },
+	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline', depth: 30 },
+	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled', depth: 40 },
+	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled', depth: 24 },
+	{ x: 5, y: 57, size: '2.4vw', variant: 'outline-alt', depth: 34 },
+	{ x: 62, y: 85, size: '2.4vw', variant: 'outline', depth: 28 },
 ] as const;
+
+/** Inline custom properties for one floating element; `i` staggers the bobbing. */
+const floatStyle = (x: number, y: number, depth: number, i: number) =>
+	`left: ${x}%; top: ${y}%; --depth: ${depth}; --bob-duration: ${5 + (i % 3)}s; --bob-delay: -${i * 1.3}s`;
 ---
 
-<section class="hero" aria-label="Intro">
+<section class="hero" aria-label="Intro" data-hero>
 	<h1 class="visually-hidden">Femke De Latter — design portfolio</h1>
 
-	{items.map(({ label, x, y, accent, href, project, previewId }) => (
-		<SelectionTag
-			class:list={['hero__tag', { 'hero__tag--end': x > 40 }]}
-			style={`left: ${x}%; top: ${y}%; anchor-name: --${previewId ?? 'none'}`}
-			accent={accent}
-			href={href}
-			popovertarget={previewId}
-		>
-			{label}
-		</SelectionTag>
-	))}
+	{tags.map(({ label, x, y, depth, category }, i) => {
+		const previewId = category && `preview-${category}`;
+		return (
+			<div
+				class:list={['float', { 'float--end': x > 40 }]}
+				style={floatStyle(x, y, depth, i)}
+				data-float
+				data-item={previewId ? '' : undefined}
+			>
+				<div class="float__inner">
+					{previewId ? (
+						<>
+							<SelectionTag button aria-expanded="false" aria-controls={previewId}>
+								{label}
+							</SelectionTag>
+							<div
+								class:list={['float__panel', { 'float__panel--up': y >= 50, 'float__panel--left': x > 45 }]}
+							>
+								<ProjectPreview id={previewId} project={featuredProject(category)} />
+							</div>
+						</>
+					) : (
+						<SelectionTag accent>{label}</SelectionTag>
+					)}
+				</div>
+			</div>
+		);
+	})}
 
-	{items.map(({ project, previewId }) =>
-		project && previewId && <ProjectPreview id={previewId} anchor={`--${previewId}`} project={project} />
-	)}
-
-	{stars.map(({ x, y, size, variant }) => (
-		<Star
-			class="hero__star"
-			variant={variant}
-			size={`max(${size}, 1rem)`}
-			style={`left: ${x}%; top: ${y}%`}
-		/>
+	{stars.map(({ x, y, size, variant, depth }, i) => (
+		<div class="float float--star" style={floatStyle(x, y, depth, i + tags.length)} data-float>
+			<div class="float__inner">
+				<Star variant={variant} size={`max(${size}, 1rem)`} />
+			</div>
+		</div>
 	))}
 </section>
 
+<script>
+	const hero = document.querySelector<HTMLElement>('[data-hero]');
+
+	if (hero) {
+		const floats = [...hero.querySelectorAll<HTMLElement>('[data-float]')];
+		const items = [...hero.querySelectorAll<HTMLElement>('[data-item]')];
+		const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		let pinned: HTMLElement | null = null;
+		let closeTimer: number | undefined;
+
+		// Everything drifts a little with the mouse, closer elements a bit more.
+		if (!reducedMotion) {
+			hero.addEventListener('pointermove', (e) => {
+				if (e.pointerType !== 'mouse') return;
+				const r = hero.getBoundingClientRect();
+				hero.style.setProperty('--mx', String(((e.clientX - r.left) / r.width - 0.5) * 2));
+				hero.style.setProperty('--my', String(((e.clientY - r.top) / r.height - 0.5) * 2));
+			});
+			hero.addEventListener('pointerleave', () => {
+				hero.style.setProperty('--mx', '0');
+				hero.style.setProperty('--my', '0');
+			});
+		}
+
+		const setOpen = (item: HTMLElement, open: boolean) => {
+			item.toggleAttribute('data-open', open);
+			item.querySelector('button')?.setAttribute('aria-expanded', String(open));
+		};
+
+		const GAP = 24; // breathing room kept around the pinned preview
+		const NEARBY = 140; // elements this close to it get a gentle nudge
+		const MAX_PUSH = 90; // keeps the movement subtle, even for elements right under the preview
+		const pushes = new Map<HTMLElement, { x: number; y: number }>();
+		const phone = matchMedia('(max-width: 640px)'); // preview is centered on screen there
+
+		// Move the other elements out of the pinned preview's way so it floats in between them.
+		const makeRoom = () => {
+			const panel = phone.matches ? undefined : pinned?.querySelector('.float__panel')?.getBoundingClientRect();
+			for (const el of floats) {
+				let x = 0;
+				let y = 0;
+				if (panel && el !== pinned) {
+					// Measure where the element would be without its current push.
+					const prev = pushes.get(el) ?? { x: 0, y: 0 };
+					const box = el.getBoundingClientRect();
+					const r = { left: box.left - prev.x, right: box.right - prev.x, top: box.top - prev.y, bottom: box.bottom - prev.y };
+					const p = { left: panel.left - GAP, right: panel.right + GAP, top: panel.top - GAP, bottom: panel.bottom + GAP };
+					const toRight = (r.left + r.right) / 2 > (p.left + p.right) / 2;
+					const toBottom = (r.top + r.bottom) / 2 > (p.top + p.bottom) / 2;
+					const overlaps = r.left < p.right && r.right > p.left && r.top < p.bottom && r.bottom > p.top;
+
+					if (overlaps) {
+						// Slide out along whichever axis needs the smallest move.
+						const needX = toRight ? p.right - r.left : r.right - p.left;
+						const needY = toBottom ? p.bottom - r.top : r.bottom - p.top;
+						if (needX < needY) x = (toRight ? 1 : -1) * Math.min(needX, MAX_PUSH);
+						else y = (toBottom ? 1 : -1) * Math.min(needY, MAX_PUSH);
+					} else {
+						const dx = Math.max(p.left - r.right, 0, r.left - p.right);
+						const dy = Math.max(p.top - r.bottom, 0, r.top - p.bottom);
+						const strength = Math.max(0, 1 - Math.hypot(dx, dy) / NEARBY) * 30;
+						x = (toRight ? 1 : -1) * (dx > 0 ? strength : 0);
+						y = (toBottom ? 1 : -1) * (dy > 0 ? strength : 0);
+					}
+				}
+				pushes.set(el, { x, y });
+				el.style.setProperty('--push-x', `${x}px`);
+				el.style.setProperty('--push-y', `${y}px`);
+			}
+		};
+
+		const pin = (item: HTMLElement | null) => {
+			items.forEach((other) => setOpen(other, other === item));
+			pinned?.removeAttribute('data-pinned');
+			pinned = item;
+			pinned?.setAttribute('data-pinned', '');
+			makeRoom();
+		};
+
+		for (const item of items) {
+			const button = item.querySelector('button')!;
+
+			button.addEventListener('click', () => pin(pinned === item ? null : item));
+
+			// Hovering peeks at the preview; clicking pins it.
+			item.addEventListener('pointerenter', (e) => {
+				if (e.pointerType !== 'mouse' || pinned) return;
+				clearTimeout(closeTimer);
+				items.forEach((other) => setOpen(other, other === item));
+			});
+			item.addEventListener('pointerleave', (e) => {
+				if (e.pointerType !== 'mouse' || item === pinned) return;
+				closeTimer = window.setTimeout(() => setOpen(item, false), 150);
+			});
+		}
+
+		// Clicking anywhere but the open preview or its tag closes it (including the dimmed area on phones).
+		document.addEventListener('click', (e) => {
+			if (pinned && !(e.target as Element).closest('[data-pinned] .float__panel, [data-pinned] button')) pin(null);
+		});
+
+		document.addEventListener('keydown', (e) => {
+			if (e.key !== 'Escape') return;
+			const open = pinned;
+			pin(null);
+			open?.querySelector('button')?.focus();
+		});
+
+		addEventListener('resize', () => pinned && makeRoom());
+	}
+</script>
+
 <style>
 	.hero {
+		--mx: 0;
+		--my: 0;
 		position: relative;
 		height: max(58vw, 26rem);
 		margin-top: -5rem; /* let the scene sit behind the header */
 	}
 
-	.hero :global(.hero__tag),
-	.hero :global(.hero__star) {
+	.float {
 		position: absolute;
+		translate:
+			calc(var(--mx) * var(--depth) * 1px + var(--push-x, 0px))
+			calc(var(--my) * var(--depth) * 1px + var(--push-y, 0px));
+		transition: translate 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.float[data-open] {
+		z-index: 5;
+	}
+
+	.float__inner {
+		animation: bob var(--bob-duration) var(--bob-delay) ease-in-out infinite alternate;
+	}
+
+	.float--star .float__inner {
+		animation-name: bob-spin;
+	}
+
+	@keyframes bob {
+		from { transform: translateY(-5px); }
+		to { transform: translateY(5px); }
+	}
+
+	@keyframes bob-spin {
+		from { transform: translateY(-6px) rotate(-8deg); }
+		to { transform: translateY(6px) rotate(8deg); }
+	}
+
+	.float__panel {
+		position: absolute;
+		top: calc(100% + 0.75rem);
+		left: 2rem;
+		opacity: 0;
+		scale: 0.96;
+		visibility: hidden;
+		pointer-events: none;
+		transform-origin: top left;
+		transition:
+			opacity 0.35s ease,
+			scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+			visibility 0.35s;
+	}
+
+	.float__panel--up {
+		top: auto;
+		bottom: calc(100% + 0.75rem);
+		transform-origin: bottom left;
+	}
+
+	.float__panel--left {
+		left: auto;
+		right: -2rem;
+		transform-origin: top right;
+	}
+
+	.float__panel--up.float__panel--left {
+		transform-origin: bottom right;
+	}
+
+	.float[data-open] .float__panel {
+		opacity: 1;
+		scale: 1;
+		visibility: visible;
+		pointer-events: auto;
 	}
 
 	.visually-hidden {
@@ -78,15 +266,59 @@ const stars = [
 		white-space: nowrap;
 	}
 
+	@media (prefers-reduced-motion: reduce) {
+		.float,
+		.float__panel {
+			transition: none;
+		}
+
+		.float__inner {
+			animation: none;
+		}
+	}
+
 	@media (max-width: 640px) {
 		.hero {
 			height: 30rem;
 		}
 
 		/* Anchor right-side tags to the edge so they stay on screen. */
-		.hero :global(.hero__tag--end) {
+		.float--end {
 			left: auto !important;
 			right: var(--gutter);
+		}
+
+		/* No room next to the tag on phones: show the preview centered on screen.
+		   Fixed positioning needs the open item's ancestors to be untransformed. */
+		.float {
+			translate: none;
+			transition: none;
+		}
+
+		.float[data-open] .float__inner {
+			animation: none;
+		}
+
+		.float[data-open] {
+			z-index: 20;
+		}
+
+		.float[data-open]::before {
+			content: '';
+			position: fixed;
+			inset: 0;
+			background: rgb(0 0 0 / 0.7);
+		}
+
+		.float__panel,
+		.float__panel--up,
+		.float__panel--left {
+			position: fixed;
+			inset: 0;
+			width: fit-content;
+			height: fit-content;
+			margin: auto;
+			transform-origin: center;
 		}
 	}
 </style>

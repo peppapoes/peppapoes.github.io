@@ -1,26 +1,24 @@
 ---
 /**
- * A label in a selection frame. Renders a link with `href`, a button that
- * opens a popover with `popovertarget`, or plain text otherwise.
+ * A label in a selection frame. Renders a link with `href`, a button with
+ * `button`, or plain text otherwise. Other attributes are passed through.
  */
+import type { HTMLAttributes } from 'astro/types';
 import SelectionFrame from './SelectionFrame.astro';
 
-interface Props {
+interface Props extends HTMLAttributes<'span'> {
 	href?: string;
-	popovertarget?: string;
+	button?: boolean;
 	accent?: boolean;
-	class?: string;
-	style?: string;
 }
 
-const { href, popovertarget, class: className, ...rest } = Astro.props;
-const as = href ? 'a' : popovertarget ? 'button' : 'span';
+const { href, button = false, class: className, ...rest } = Astro.props;
+const as = href ? 'a' : button ? 'button' : 'span';
 ---
 
 <SelectionFrame
 	as={as}
 	href={href}
-	popovertarget={popovertarget}
 	type={as === 'button' ? 'button' : undefined}
 	class:list={['tag', { 'tag--interactive': as !== 'span' }, className]}
 	{...rest}
@@ -39,7 +37,7 @@ const as = href ? 'a' : popovertarget ? 'button' : 'span';
 		letter-spacing: -0.05em;
 		text-decoration: none;
 		white-space: nowrap;
-		transition: transform 0.2s ease;
+		transition: scale 0.3s ease;
 	}
 
 	.tag--interactive {
@@ -47,7 +45,8 @@ const as = href ? 'a' : popovertarget ? 'button' : 'span';
 	}
 
 	.tag--interactive:hover,
-	.tag--interactive:focus-visible {
-		transform: scale(1.05);
+	.tag--interactive:focus-visible,
+	.tag--interactive[aria-expanded='true'] {
+		scale: 1.05;
 	}
 </style>

@@ -1,8 +1,7 @@
 ---
 /**
- * Popover with a single project preview, opened by a SelectionTag with a
- * matching `popovertarget`. Anchored below the tag where the browser supports
- * CSS anchor positioning, centered on screen otherwise.
+ * Framed preview of one project. The hero shows and positions it; without a
+ * project it shows a "coming soon" frame.
  */
 import { Image } from 'astro:assets';
 import SelectionFrame from '../SelectionFrame.astro';
@@ -10,103 +9,67 @@ import type { Project } from '../../data/projects';
 
 interface Props {
 	id: string;
-	anchor: string;
-	project: Project;
+	project?: Project;
 }
 
-const { id, anchor, project } = Astro.props;
-const ArrowWrapper = project.href ? 'a' : 'span';
+const { id, project } = Astro.props;
+const ArrowWrapper = project?.href ? 'a' : 'span';
 ---
 
-<div id={id} popover class="preview" style={`position-anchor: ${anchor}`}>
+<div id={id} class="preview" role="region" aria-label={project?.title ?? 'Coming soon'}>
 	<SelectionFrame class="preview__frame">
-		<Image
-			src={project.preview}
-			alt={project.previewAlt}
-			widths={[400, 600]}
-			sizes="(max-width: 640px) 90vw, 26rem"
-		/>
+		{project
+			? <Image src={project.preview} alt={project.previewAlt} widths={[400, 600]} sizes="(max-width: 640px) 90vw, 26rem" />
+			: <p class="preview__soon">project coming soon</p>}
 	</SelectionFrame>
 
-	<div class="preview__info">
-		<ul class="preview__meta">
-			<li>{project.title}</li>
-			<li>{project.year}</li>
-			<li>{project.tagline}</li>
-		</ul>
+	{project && (
+		<div class="preview__info">
+			<ul class="preview__meta">
+				<li>{project.title}</li>
+				<li>{project.year}</li>
+				<li>{project.tagline}</li>
+			</ul>
 
-		<ArrowWrapper
-			class="preview__arrow"
-			href={project.href}
-			aria-label={project.href ? `View ${project.title}` : undefined}
-			aria-hidden={project.href ? undefined : 'true'}
-		>
-			<svg viewBox="0 0 100 16" aria-hidden="true">
-				<path d="M0 8H98M90 1l8 7-8 7" />
-			</svg>
-		</ArrowWrapper>
-	</div>
+			<ArrowWrapper
+				class="preview__arrow"
+				href={project.href}
+				aria-label={project.href ? `View ${project.title}` : undefined}
+				aria-hidden={project.href ? undefined : 'true'}
+			>
+				<svg viewBox="0 0 100 16" aria-hidden="true">
+					<path d="M0 8H98M90 1l8 7-8 7" />
+				</svg>
+			</ArrowWrapper>
+		</div>
+	)}
 </div>
 
 <style>
 	.preview {
 		width: min(26rem, 90vw);
-		margin: 0;
 		padding: 0.75rem;
-		overflow: visible;
-		border: 0;
 		background: var(--color-bg);
 		color: var(--color-fg);
-
-		opacity: 0;
-		translate: 0 0.5rem;
-		transition:
-			opacity 0.25s ease,
-			translate 0.25s ease,
-			display 0.25s allow-discrete,
-			overlay 0.25s allow-discrete;
-	}
-
-	.preview:popover-open {
-		opacity: 1;
-		translate: 0 0;
-	}
-
-	@starting-style {
-		.preview:popover-open {
-			opacity: 0;
-			translate: 0 0.5rem;
-		}
-	}
-
-	@supports (position-area: bottom) {
-		.preview {
-			inset: auto;
-			position-area: bottom span-right;
-			position-try-fallbacks: flip-inline;
-			margin-top: 0.5rem;
-			margin-left: 1.5rem;
-		}
-	}
-
-	/* On phones the preview is centered, there's no room next to the tag. */
-	@media (max-width: 640px) {
-		.preview {
-			inset: 0;
-			margin: auto;
-			position-area: none;
-		}
 	}
 
 	.preview :global(.preview__frame) {
 		--handle: 1.1rem;
 		padding: 0.75rem;
-		background: var(--color-bg);
 	}
 
 	.preview img {
 		width: 100%;
 		height: auto;
+	}
+
+	.preview__soon {
+		display: grid;
+		place-items: center;
+		aspect-ratio: 600 / 407;
+		margin: 0;
+		font-family: var(--font-hand);
+		font-size: 1.2rem;
 	}
 
 	.preview__info {
