@@ -3,16 +3,16 @@ import PhotoStrip from './PhotoStrip.astro';
 import ObjectCallouts from './ObjectCallouts.astro';
 import Star from '../Star.astro';
 
-const frames = [
-	{ caption: "i'm 23 years old & located in Kortrijk, Belgium" },
-	{ caption: 'and slightly obsessed with my cat...' },
-	{ caption: 'but most importantly: i love being creative!' },
+const captions = [
+	"i'm 23 years old & located in Kortrijk, Belgium",
+	'and slightly obsessed with my cat...',
+	'but most importantly: i love being creative!',
 ];
 
 const stars = [
 	{ x: 58, y: 6, size: '1.3vw', variant: 'filled' },
 	{ x: 93.5, y: 10, size: '1.3vw', variant: 'outline' },
-	{ x: 21.5, y: 46, size: '2.2vw', variant: 'outline' },
+	{ x: 21.5, y: 46, size: '2.2vw', variant: 'outline-alt' },
 	{ x: 46, y: 67, size: '1.8vw', variant: 'filled' },
 	{ x: 82.5, y: 90, size: '1.3vw', variant: 'outline' },
 ] as const;
@@ -20,7 +20,7 @@ const stars = [
 
 <section class="about" aria-label="About me">
 	<div class="about__strip">
-		<PhotoStrip frames={frames} />
+		<PhotoStrip captions={captions} />
 	</div>
 
 	<div class="about__text">
@@ -49,7 +49,7 @@ const stars = [
 	.about {
 		position: relative;
 		display: grid;
-		grid-template-columns: 17% 1fr 56%;
+		grid-template-columns: 22% 1fr 54%;
 		grid-template-rows: auto 1fr;
 		column-gap: 3vw;
 		padding: 8vw 0 6vw;
@@ -57,8 +57,7 @@ const stars = [
 
 	.about__strip {
 		grid-row: 1 / span 2;
-		padding-top: 1rem;
-		translate: -4% 0;
+		margin-top: -4vw;
 	}
 
 	.about__text {
