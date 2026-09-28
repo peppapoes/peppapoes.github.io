@@ -1,6 +1,7 @@
 import type { ImageMetadata } from 'astro';
 import milesAndMeals from '../assets/images/milesandmeals_preview.jpg';
 import kickstarter from '../assets/images/kickstarter_preview.jpg';
+import clickGame from '../assets/images/clickgame_preview.jpg';
 
 export type Category = 'visual-design' | 'motion-design' | 'coding' | 'integration';
 
@@ -46,7 +47,7 @@ export const projects: Project[] = [
 		title: 'Click game',
 		category: 'coding',
 		year: 2024,
-		preview: milesAndMeals,
+		preview: clickGame,
 		previewAlt: 'Preview of the CatVolution click game',
 		assignment: 'Design a click game in JavaScript with a completely original theme.',
 		idea:
