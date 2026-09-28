@@ -1,22 +1,12 @@
 ---
 import SocialLinks from './SocialLinks.astro';
+import FooterStar from '../assets/images/footer_star.svg';
 
 const email = 'fdelatter@gmail.com';
 ---
 
 <footer id="contact" class="footer">
-	<svg class="footer__splash" viewBox="0 0 1000 170" preserveAspectRatio="none" aria-hidden="true">
-		<defs>
-			<filter id="rough-edge">
-				<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4" />
-				<feDisplacementMap in="SourceGraphic" scale="7" />
-			</filter>
-		</defs>
-		<path
-			filter="url(#rough-edge)"
-			d="M405 4 L452 58 L520 70 L585 76 L622 14 L640 88 L760 62 L880 38 L1000 6 L1000 175 L470 175 Z"
-		/>
-	</svg>
+	<FooterStar class="footer__splash" aria-hidden="true" />
 
 	<p class="footer__logo" aria-hidden="true">FDSGNS</p>
 
@@ -36,22 +26,23 @@ const email = 'fdelatter@gmail.com';
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: 2rem;
-		height: 17vw;
-		min-height: 11rem;
+		min-height: 17vw;
+		padding-bottom: clamp(1rem, 1.6vw, 1.75rem);
 		overflow: hidden;
 	}
 
+	/* Keeps its own aspect ratio and grows from the bottom-right corner. */
 	.footer__splash {
 		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		fill: var(--color-accent);
+		right: 0;
+		bottom: 0;
+		width: 76%;
+		height: auto;
 	}
 
 	.footer__logo {
 		position: relative;
-		margin: 0 0 -0.1em calc(var(--gutter) - 0.04em);
+		margin: 0 0 0 calc(var(--gutter) - 0.04em);
 		font-size: 12.5vw;
 		font-weight: 700;
 		line-height: 0.8;
@@ -64,7 +55,7 @@ const email = 'fdelatter@gmail.com';
 		flex-direction: column;
 		align-items: flex-end;
 		gap: 1rem;
-		padding: 0 var(--gutter) 1.5rem;
+		padding: 0 var(--gutter);
 		text-align: right;
 	}
 
@@ -83,8 +74,11 @@ const email = 'fdelatter@gmail.com';
 		.footer {
 			flex-direction: column-reverse;
 			align-items: stretch;
-			height: auto;
 			padding-top: 3rem;
+		}
+
+		.footer__splash {
+			width: 160%;
 		}
 
 		.footer__logo {
