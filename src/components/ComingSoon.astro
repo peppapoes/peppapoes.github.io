@@ -1,0 +1,76 @@
+---
+/** Placeholder content for a page that isn't finished yet. */
+import SelectionFrame from './SelectionFrame.astro';
+import Star from './Star.astro';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<section class="soon">
+	<Star class="soon__star soon__star--a" variant="outline-alt" size="max(3vw, 1.75rem)" />
+	<Star class="soon__star soon__star--b" variant="filled" size="max(2vw, 1.25rem)" />
+	<Star class="soon__star soon__star--c" variant="outline" size="max(1.4vw, 1rem)" />
+
+	<h1 class="soon__title">
+		<SelectionFrame as="span" accent class="soon__frame">{title}</SelectionFrame>
+	</h1>
+	<p class="soon__text">page in the work!</p>
+</section>
+
+<style>
+	.soon {
+		position: relative;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 1.5rem;
+		min-height: max(60vh, 26rem);
+		padding: 4rem var(--gutter);
+		text-align: center;
+	}
+
+	.soon__title {
+		margin: 0;
+		color: var(--color-accent);
+		font-size: clamp(3rem, 8vw, 7.5rem);
+		font-weight: 700;
+		line-height: 0.9;
+		letter-spacing: -0.04em;
+	}
+
+	.soon :global(.soon__frame) {
+		--handle: 0.12em;
+		display: inline-block;
+		padding: 0.1em 0.15em 0.02em;
+	}
+
+	.soon__text {
+		margin: 0;
+		font-family: var(--font-hand);
+		font-size: clamp(1.25rem, 2.2vw, 2rem);
+	}
+
+	.soon :global(.soon__star) {
+		position: absolute;
+		animation: bob 6s ease-in-out infinite alternate;
+	}
+
+	.soon :global(.soon__star--a) { top: 18%; left: 18%; }
+	.soon :global(.soon__star--b) { top: 30%; right: 16%; animation-delay: -2s; }
+	.soon :global(.soon__star--c) { bottom: 18%; left: 58%; animation-delay: -4s; }
+
+	@keyframes bob {
+		from { transform: translateY(-5px) rotate(-6deg); }
+		to { transform: translateY(5px) rotate(6deg); }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.soon :global(.soon__star) {
+			animation: none;
+		}
+	}
+</style>

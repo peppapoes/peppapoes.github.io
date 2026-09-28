@@ -4,16 +4,18 @@
  * brighter (close by), and some twinkle softly. Positions are random but seeded,
  * so every build places them in the same spots.
  *
+ * With `fixed`, the field stays put behind the whole page while it scrolls.
  * With `parallax`, the far and near dots drift with the hero's --mx/--my.
  */
 interface Props {
 	count: number;
 	seed?: number;
+	fixed?: boolean;
 	parallax?: boolean;
 	class?: string;
 }
 
-const { count, seed = 1, parallax = false, class: className } = Astro.props;
+const { count, seed = 1, fixed = false, parallax = false, class: className } = Astro.props;
 
 // Small seeded random generator (mulberry32).
 const random = (() => {
@@ -43,7 +45,7 @@ const dots = Array.from({ length: count }, () => {
 const layers = [dots.filter((d) => !d.near), dots.filter((d) => d.near)];
 ---
 
-<svg class:list={['starfield', { 'starfield--parallax': parallax }, className]} aria-hidden="true">
+<svg class:list={['starfield', { 'starfield--fixed': fixed, 'starfield--parallax': parallax }, className]} aria-hidden="true">
 	{layers.map((layer, i) => (
 		<g class:list={['starfield__layer', i ? 'starfield__layer--near' : 'starfield__layer--far']}>
 			{layer.map((d) => (
@@ -67,6 +69,12 @@ const layers = [dots.filter((d) => !d.near), dots.filter((d) => d.near)];
 		height: 100%;
 		overflow: visible;
 		pointer-events: none;
+	}
+
+	/* Behind all content, like a far-away night sky. */
+	.starfield--fixed {
+		position: fixed;
+		z-index: -1;
 	}
 
 	circle {

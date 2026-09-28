@@ -32,7 +32,7 @@ const {
 		<title>{title}</title>
 	</head>
 	<body>
-		<Starfield count={110} seed={7} class="site-stars" />
+		<Starfield count={160} seed={7} fixed />
 		<Header />
 		<main>
 			<slot />
@@ -70,12 +70,6 @@ const {
 	body {
 		margin: 0;
 		overflow-x: hidden;
-	}
-
-	/* Stays put while the page scrolls, like a far-away night sky behind everything. */
-	.site-stars {
-		position: fixed !important;
-		z-index: -1;
 	}
 
 	img {
