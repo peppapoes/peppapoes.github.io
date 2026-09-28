@@ -5,7 +5,7 @@
  */
 import { Image } from 'astro:assets';
 import SelectionFrame from '../SelectionFrame.astro';
-import type { Project } from '../../data/projects';
+import { categoryLabels, projectUrl, type Project } from '../../data/projects';
 
 interface Props {
 	id: string;
@@ -13,7 +13,7 @@ interface Props {
 }
 
 const { id, project } = Astro.props;
-const ArrowWrapper = project?.href ? 'a' : 'span';
+const href = project && projectUrl(project);
 ---
 
 <div id={id} class="preview" role="region" aria-label={project?.title ?? 'Coming soon'}>
@@ -26,21 +26,16 @@ const ArrowWrapper = project?.href ? 'a' : 'span';
 	{project && (
 		<div class="preview__info">
 			<ul class="preview__meta">
-				<li>{project.title}</li>
-				<li>{project.year}</li>
-				<li>{project.tagline}</li>
+				<li>{project.previewTitle ?? project.title}</li>
+				<li>{project.year} assignment</li>
+				<li>{project.tagline ?? categoryLabels[project.category]}</li>
 			</ul>
 
-			<ArrowWrapper
-				class="preview__arrow"
-				href={project.href}
-				aria-label={project.href ? `View ${project.title}` : undefined}
-				aria-hidden={project.href ? undefined : 'true'}
-			>
+			<a class="preview__arrow" href={href} aria-label={`View ${project.title}`}>
 				<svg viewBox="0 0 100 16" aria-hidden="true">
 					<path d="M0 8H98M90 1l8 7-8 7" />
 				</svg>
-			</ArrowWrapper>
+			</a>
 		</div>
 	)}
 </div>
@@ -96,7 +91,7 @@ const ArrowWrapper = project?.href ? 'a' : 'span';
 		transition: translate 0.2s ease;
 	}
 
-	a.preview__arrow:hover {
+	.preview__arrow:hover {
 		translate: 0.4rem 0;
 	}
 

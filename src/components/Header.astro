@@ -3,7 +3,7 @@ import Star from './Star.astro';
 
 const links = [
 	{ label: 'About Me', href: '/#about' },
-	{ label: 'My Work', href: '/#work' },
+	{ label: 'My Work', href: '/work' },
 	{ label: 'Contact', href: '/#contact' },
 ];
 ---
@@ -17,7 +17,7 @@ const links = [
 	<nav aria-label="Main">
 		<ul class="nav">
 			{links.map(({ label, href }) => (
-				<li><a href={href}>{label}</a></li>
+				<li><a href={href} aria-current={Astro.url.pathname.replace(/\/$/, '') === href ? 'page' : undefined}>{label}</a></li>
 			))}
 		</ul>
 	</nav>
@@ -62,7 +62,8 @@ const links = [
 		text-decoration: none;
 	}
 
-	.nav a:hover {
+	.nav a:hover,
+	.nav a[aria-current='page'] {
 		color: var(--color-accent);
 	}
 </style>

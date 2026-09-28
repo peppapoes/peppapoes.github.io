@@ -1,0 +1,179 @@
+---
+/**
+ * One project in the /work list. Closed it shows the summary row; opened it
+ * adds the assignment, the idea and a gallery. Rows share a `name`, so opening
+ * one closes the others.
+ */
+import { Image } from 'astro:assets';
+import ProjectGallery from './ProjectGallery.astro';
+import { categoryLabels, type Project } from '../../data/projects';
+
+interface Props {
+	project: Project;
+}
+
+const { project } = Astro.props;
+---
+
+<details id={project.slug} class="row" name="projects">
+	<summary class="row__summary">
+		<span class="row__heading">
+			<span class="row__category">{categoryLabels[project.category]}</span>
+			<span class="row__title">{project.title}</span>
+		</span>
+		<Image
+			class="row__image"
+			src={project.preview}
+			alt={project.previewAlt}
+			widths={[400, 600]}
+			sizes="(max-width: 800px) 90vw, 20vw"
+		/>
+		<span class="row__year">{project.year}</span>
+	</summary>
+
+	<div class="row__content">
+		{(project.assignment || project.idea) && (
+			<div class="row__text">
+				{project.assignment && (
+					<section>
+						<h3 class="row__label">Assignment</h3>
+						<p>{project.assignment}</p>
+					</section>
+				)}
+				{project.idea && (
+					<section>
+						<h3 class="row__label">Idea</h3>
+						<p>{project.idea}</p>
+					</section>
+				)}
+			</div>
+		)}
+
+		<ProjectGallery images={project.gallery} />
+	</div>
+</details>
+
+<style>
+	.row {
+		border-top: 1.5px solid var(--color-fg);
+		interpolate-size: allow-keywords;
+	}
+
+	/* Smoothly grow open where supported; other browsers simply open. */
+	.row::details-content {
+		block-size: 0;
+		overflow-x: visible;
+		overflow-y: clip;
+		transition:
+			block-size 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
+			content-visibility 0.6s allow-discrete;
+	}
+
+	.row[open]::details-content {
+		block-size: auto;
+	}
+
+	.row__summary {
+		display: grid;
+		grid-template-columns: 1fr auto minmax(4rem, 8vw);
+		align-items: start;
+		gap: 2rem;
+		padding-block: clamp(1.5rem, 3vw, 2.75rem);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.row__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.row__summary:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 4px;
+	}
+
+	.row__heading {
+		display: grid;
+		gap: 0.2em;
+		padding-top: 1rem;
+	}
+
+	.row__category {
+		font-family: var(--font-hand);
+		font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+	}
+
+	.row__title {
+		font-size: clamp(2.25rem, 4.2vw, 4rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.06em;
+		transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.3s ease;
+	}
+
+	.row__summary:hover .row__title,
+	.row[open] .row__title {
+		translate: 0.4rem 0;
+	}
+
+	.row__image {
+		width: clamp(12rem, 20vw, 21.5rem);
+		height: auto;
+		aspect-ratio: 345 / 233;
+		object-fit: cover;
+	}
+
+	.row__year {
+		justify-self: end;
+		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		letter-spacing: -0.03em;
+	}
+
+	.row__text {
+		display: grid;
+		gap: 2.5rem;
+		max-width: 38rem;
+		padding: 0 0 2.5rem 0.4rem;
+	}
+
+	.row__label {
+		margin: 0 0 1rem;
+		font-family: var(--font-hand);
+		font-size: 1rem;
+		font-weight: 400;
+	}
+
+	.row__text p {
+		margin: 0;
+		font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+		font-weight: 300;
+		line-height: 1.4;
+		letter-spacing: -0.02em;
+	}
+
+	/* The gallery bleeds out of the list column to the full page width. */
+	.row__content :global(.gallery) {
+		width: 100vw;
+		margin-left: calc(-1 * var(--list-start, 0px));
+		padding: 0 var(--gutter) clamp(2rem, 4vw, 3.5rem);
+		scroll-padding-inline: var(--gutter);
+	}
+
+	@media (max-width: 800px) {
+		.row__summary {
+			grid-template-columns: 1fr auto;
+			gap: 1rem;
+		}
+
+		.row__heading {
+			padding-top: 0;
+		}
+
+		.row__image {
+			grid-column: 1 / -1;
+			grid-row: 2;
+			width: 100%;
+			min-width: 0;
+		}
+	}
+</style>
