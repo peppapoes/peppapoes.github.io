@@ -1,15 +1,23 @@
 ---
 import SelectionTag from '../SelectionTag.astro';
 import Star from '../Star.astro';
+import ProjectPreview from './ProjectPreview.astro';
+import { featuredProject, type Category } from '../../data/projects';
 
 // Positions are percentages of the hero area, taken from the Figma design.
-const tags = [
-	{ label: 'Visual Design', x: 19, y: 22 },
+const tags: { label: string; x: number; y: number; accent?: boolean; href?: string; category?: Category }[] = [
+	{ label: 'Visual Design', x: 19, y: 22, category: 'visual-design' },
 	{ label: 'My portfolio', x: 71.5, y: 20, accent: true, href: '#work' },
-	{ label: 'Integration of all courses', x: 47, y: 50 },
-	{ label: 'Motion Design', x: 76.5, y: 67 },
-	{ label: 'Coding & Development', x: 9, y: 75 },
+	{ label: 'Integration of all courses', x: 47, y: 50, category: 'integration' },
+	{ label: 'Motion Design', x: 76.5, y: 67, category: 'motion-design' },
+	{ label: 'Coding & Development', x: 9, y: 75, category: 'coding' },
 ];
+
+// A category tag becomes clickable as soon as it has a project in src/data/projects.ts.
+const items = tags.map((tag) => {
+	const project = tag.category && featuredProject(tag.category);
+	return { ...tag, project, previewId: project ? `preview-${tag.category}` : undefined };
+});
 
 const stars = [
 	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline' },
@@ -23,16 +31,21 @@ const stars = [
 <section class="hero" aria-label="Intro">
 	<h1 class="visually-hidden">Femke De Latter — design portfolio</h1>
 
-	{tags.map(({ label, x, y, accent, href }) => (
+	{items.map(({ label, x, y, accent, href, project, previewId }) => (
 		<SelectionTag
 			class:list={['hero__tag', { 'hero__tag--end': x > 40 }]}
-			style={`left: ${x}%; top: ${y}%`}
+			style={`left: ${x}%; top: ${y}%; anchor-name: --${previewId ?? 'none'}`}
 			accent={accent}
 			href={href}
+			popovertarget={previewId}
 		>
 			{label}
 		</SelectionTag>
 	))}
+
+	{items.map(({ project, previewId }) =>
+		project && previewId && <ProjectPreview id={previewId} anchor={`--${previewId}`} project={project} />
+	)}
 
 	{stars.map(({ x, y, size, variant }) => (
 		<Star

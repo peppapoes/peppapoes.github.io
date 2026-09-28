@@ -1,0 +1,45 @@
+---
+/** A border with square corner handles, like a selected layer in Figma. */
+import type { HTMLTag, Polymorphic } from 'astro/types';
+
+type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
+	accent?: boolean;
+};
+
+const { as: Tag = 'div', accent = false, class: className, ...rest } = Astro.props;
+---
+
+<Tag class:list={['frame', { 'frame--accent': accent }, className]} {...rest}>
+	<slot />
+	<span class="frame__handle frame__handle--tl" aria-hidden="true"></span>
+	<span class="frame__handle frame__handle--tr" aria-hidden="true"></span>
+	<span class="frame__handle frame__handle--bl" aria-hidden="true"></span>
+	<span class="frame__handle frame__handle--br" aria-hidden="true"></span>
+</Tag>
+
+<style>
+	.frame {
+		--frame-color: var(--color-fg);
+		--handle: 0.6em;
+		position: relative;
+		border: 1px solid var(--frame-color);
+		color: var(--frame-color);
+	}
+
+	.frame--accent {
+		--frame-color: var(--color-accent);
+	}
+
+	.frame__handle {
+		position: absolute;
+		width: var(--handle);
+		height: var(--handle);
+		background: var(--frame-color);
+		translate: -50% -50%;
+	}
+
+	.frame__handle--tl { top: 0; left: 0; }
+	.frame__handle--tr { top: 0; left: 100%; }
+	.frame__handle--bl { top: 100%; left: 0; }
+	.frame__handle--br { top: 100%; left: 100%; }
+</style>
