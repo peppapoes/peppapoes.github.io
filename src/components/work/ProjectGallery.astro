@@ -4,19 +4,16 @@ import { Image } from 'astro:assets';
 import type { Project } from '../../data/projects';
 
 interface Props {
-	images?: Project['gallery'];
+	images: NonNullable<Project['gallery']>;
 }
 
-const PLACEHOLDERS = 5;
 const { images } = Astro.props;
 ---
 
 <div class="gallery" data-gallery tabindex="0" aria-label="Project images">
-	{images?.length
-		? images.map(({ src, alt }) => (
-				<Image class="gallery__item" src={src} alt={alt} widths={[400, 800]} sizes="24rem" />
-			))
-		: Array.from({ length: PLACEHOLDERS }, () => <div class="gallery__item gallery__item--placeholder" aria-hidden="true" />)}
+	{images.map(({ src, alt }) => (
+		<Image class="gallery__item" src={src} alt={alt} widths={[400, 800]} sizes="24rem" />
+	))}
 </div>
 
 <style>
@@ -44,9 +41,5 @@ const { images } = Astro.props;
 		aspect-ratio: 253 / 270;
 		object-fit: cover;
 		scroll-snap-align: center;
-	}
-
-	.gallery__item--placeholder {
-		background: #d9d9d9;
 	}
 </style>

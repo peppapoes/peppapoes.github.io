@@ -1,8 +1,9 @@
 ---
 /**
  * One project in the /work list. Closed it shows the summary row; opened it
- * adds the assignment, the idea and a gallery. Rows share a `name`, so opening
- * one closes the others.
+ * adds the video, the assignment, the idea and a gallery. Rows share a `name`,
+ * so opening one closes the others. Projects without any of those yet are a
+ * plain row that can't be opened.
  */
 import { Image } from 'astro:assets';
 import ProjectGallery from './ProjectGallery.astro';
@@ -13,10 +14,13 @@ interface Props {
 }
 
 const { project } = Astro.props;
+const expandable = Boolean(project.video || project.assignment || project.idea || project.gallery?.length);
+const Row = expandable ? 'details' : 'article';
+const Summary = expandable ? 'summary' : 'div';
 ---
 
-<details id={project.slug} class="row" name="projects">
-	<summary class="row__summary">
+<Row id={project.slug} class="row" name={expandable ? 'projects' : undefined}>
+	<Summary class:list={['row__summary', { 'row__summary--static': !expandable }]}>
 		<span class="row__heading">
 			<span class="row__category">{categoryLabels[project.category]}</span>
 			<span class="row__title">{project.title}</span>
@@ -29,8 +33,9 @@ const { project } = Astro.props;
 			sizes="(max-width: 800px) 90vw, 20vw"
 		/>
 		<span class="row__year">{project.year}</span>
-	</summary>
+	</Summary>
 
+	{expandable && (
 	<div class="row__content">
 		{project.video && (
 			<video
@@ -60,9 +65,10 @@ const { project } = Astro.props;
 			</div>
 		)}
 
-		{(project.gallery || !project.video) && <ProjectGallery images={project.gallery} />}
+		{project.gallery?.length ? <ProjectGallery images={project.gallery} /> : null}
 	</div>
-</details>
+	)}
+</Row>
 
 <style>
 	.row {
@@ -95,6 +101,10 @@ const { project } = Astro.props;
 		list-style: none;
 	}
 
+	.row__summary--static {
+		cursor: default;
+	}
+
 	.row__summary::-webkit-details-marker {
 		display: none;
 	}
@@ -123,7 +133,7 @@ const { project } = Astro.props;
 		transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.3s ease;
 	}
 
-	.row__summary:hover .row__title,
+	.row__summary:not(.row__summary--static):hover .row__title,
 	.row[open] .row__title {
 		translate: 0.4rem 0;
 	}

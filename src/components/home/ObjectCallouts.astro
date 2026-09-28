@@ -2,6 +2,7 @@
 /**
  * The chair / laptop / lamp composition with pink callout lines.
  * Export the objects from Figma as one transparent PNG and pass it as `src`.
+ * Renders nothing until then, so the live site shows no empty placeholder.
  */
 interface Props {
 	src?: string;
@@ -18,10 +19,9 @@ const callouts = [
 ];
 ---
 
+{src && (
 <figure class="objects">
-	{src
-		? <img class="objects__image" src={src} alt={alt} loading="lazy" />
-		: <div class="objects__image objects__image--placeholder" role="img" aria-label={alt}>objects image</div>}
+	<img class="objects__image" src={src} alt={alt} loading="lazy" />
 
 	<svg class="objects__lines" viewBox="0 0 600 390" aria-hidden="true">
 		{callouts.map(({ dot, path }) => (
@@ -41,6 +41,7 @@ const callouts = [
 		</figcaption>
 	))}
 </figure>
+)}
 
 <style>
 	.objects {
@@ -57,14 +58,6 @@ const callouts = [
 		width: 54%;
 		height: 87%;
 		object-fit: contain;
-	}
-
-	.objects__image--placeholder {
-		display: grid;
-		place-items: center;
-		border: 1px dashed rgb(255 255 255 / 0.3);
-		color: rgb(255 255 255 / 0.4);
-		font-size: 0.8rem;
 	}
 
 	.objects__lines {

@@ -30,7 +30,7 @@ export interface Project {
 	idea?: string;
 	/** Shown large above the texts when the project is opened on /work. */
 	video?: string;
-	/** Images for the gallery on /work. Grey placeholders are shown until these are added (unless there's a video). */
+	/** Images for the horizontal gallery on /work. */
 	gallery?: { src: ImageMetadata; alt: string }[];
 }
 
