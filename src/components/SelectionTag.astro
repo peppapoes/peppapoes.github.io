@@ -1,0 +1,59 @@
+---
+/** A label in a "selected layer" frame with corner handles, like in Figma. */
+interface Props {
+	href?: string;
+	accent?: boolean;
+	class?: string;
+	style?: string;
+}
+
+const { href, accent = false, class: className, style } = Astro.props;
+const Tag = href ? 'a' : 'span';
+---
+
+<Tag href={href} class:list={['tag', { 'tag--accent': accent }, className]} style={style}>
+	<slot />
+	<span class="handle handle--tl" aria-hidden="true"></span>
+	<span class="handle handle--tr" aria-hidden="true"></span>
+	<span class="handle handle--bl" aria-hidden="true"></span>
+	<span class="handle handle--br" aria-hidden="true"></span>
+</Tag>
+
+<style>
+	.tag {
+		--tag-color: var(--color-fg);
+		--handle: 0.6em;
+		position: relative;
+		display: inline-block;
+		padding: 0.35em 0.5em;
+		border: 1px solid var(--tag-color);
+		color: var(--tag-color);
+		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
+		font-weight: 700;
+		letter-spacing: -0.05em;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: transform 0.2s ease;
+	}
+
+	.tag--accent {
+		--tag-color: var(--color-accent);
+	}
+
+	a.tag:hover {
+		transform: scale(1.05);
+	}
+
+	.handle {
+		position: absolute;
+		width: var(--handle);
+		height: var(--handle);
+		background: var(--tag-color);
+		translate: -50% -50%;
+	}
+
+	.handle--tl { top: 0; left: 0; }
+	.handle--tr { top: 0; left: 100%; }
+	.handle--bl { top: 100%; left: 0; }
+	.handle--br { top: 100%; left: 100%; }
+</style>

@@ -1,0 +1,40 @@
+---
+interface Props {
+	variant?: 'outline' | 'filled';
+	size?: string;
+	class?: string;
+	style?: string;
+}
+
+const { variant = 'outline', size = '2rem', class: className, style } = Astro.props;
+
+// Outline stars are classic 5-point stars, filled ones are skinny "sparkles".
+const paths = {
+	outline: 'M12 2.5l2.7 6.3 6.8.6-5.2 4.5 1.6 6.7L12 17.1l-5.9 3.5 1.6-6.7-5.2-4.5 6.8-.6z',
+	filled: 'M12 1.5l1.6 8.3 8.9-1.9-7.4 4.9 4.2 8.2-7.3-5.6-7.4 5.6 4.3-8.2L1.5 7.9l8.9 1.9z',
+};
+---
+
+<svg
+	class:list={['star', className]}
+	style={`--star-size: ${size}; ${style ?? ''}`}
+	viewBox="0 0 24 24"
+	aria-hidden="true"
+>
+	<path
+		d={paths[variant]}
+		fill={variant === 'filled' ? 'currentColor' : 'none'}
+		stroke="currentColor"
+		stroke-width={variant === 'filled' ? 0.5 : 1}
+		stroke-linejoin="round"
+	/>
+</svg>
+
+<style>
+	.star {
+		width: var(--star-size);
+		height: var(--star-size);
+		color: var(--color-fg);
+		pointer-events: none;
+	}
+</style>

@@ -1,0 +1,70 @@
+---
+type Word = { text: string; style?: 'accent' | 'outline' };
+
+// Each row can be shifted horizontally so words bleed off the edges, like in the design.
+const rows: { words: Word[]; offset: string }[] = [
+	{ words: [{ text: 'who am i', style: 'accent' }, { text: 'design' }, { text: 'inspired' }], offset: '2vw' },
+	{ words: [{ text: 'eager' }, { text: 'coding' }, { text: 'femke', style: 'outline' }, { text: 'visual' }], offset: '-4vw' },
+	{ words: [{ text: 'sketch' }, { text: 'inovative' }, { text: 'ux' }, { text: 'young' }], offset: '-2vw' },
+	{ words: [{ text: 'artistic' }, { text: 'creativity' }], offset: '0vw' },
+];
+---
+
+<section id="about" class="cloud" aria-label="Who am I">
+	{rows.map(({ words, offset }, i) => (
+		<p class:list={['cloud__row', { 'cloud__row--spread': i === rows.length - 1 }]} style={`--offset: ${offset}`}>
+			{words.map(({ text, style }) => (
+				<span class:list={['cloud__word', style && `cloud__word--${style}`]}>{text}</span>
+			))}
+		</p>
+	))}
+</section>
+
+<style>
+	.cloud {
+		overflow: hidden;
+		padding-block: 2vw;
+	}
+
+	.cloud__row {
+		display: flex;
+		justify-content: center;
+		gap: 0.45em;
+		margin: 0;
+		translate: var(--offset) 0;
+		font-size: 8.8vw;
+		font-weight: 700;
+		line-height: 0.92;
+		letter-spacing: -0.055em;
+		white-space: nowrap;
+	}
+
+	.cloud__row--spread {
+		gap: 2.4em;
+	}
+
+	.cloud__word--accent {
+		color: var(--color-accent);
+	}
+
+	.cloud__word--outline {
+		color: transparent;
+		font-weight: 400;
+		-webkit-text-stroke: 0.012em var(--color-fg);
+	}
+
+	@media (max-width: 640px) {
+		.cloud__row {
+			font-size: 12vw;
+		}
+	}
+
+	.cloud__word {
+		transition: color 0.2s ease;
+	}
+
+	.cloud__word:not(.cloud__word--accent):hover {
+		color: var(--color-accent);
+		-webkit-text-stroke-color: var(--color-accent);
+	}
+</style>

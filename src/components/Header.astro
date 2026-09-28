@@ -1,0 +1,68 @@
+---
+import Star from './Star.astro';
+
+const links = [
+	{ label: 'About Me', href: '/#about' },
+	{ label: 'My Work', href: '/#work' },
+	{ label: 'Contact', href: '/#contact' },
+];
+---
+
+<header class="header">
+	<a href="/" class="logo" aria-label="FDSGNS — home">
+		FDSGNS
+		<Star size="1.5em" class="logo__star" />
+	</a>
+
+	<nav aria-label="Main">
+		<ul class="nav">
+			{links.map(({ label, href }) => (
+				<li><a href={href}>{label}</a></li>
+			))}
+		</ul>
+	</nav>
+</header>
+
+<style>
+	.header {
+		position: relative;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: clamp(1.25rem, 2.5vw, 2.25rem) var(--gutter);
+	}
+
+	.logo {
+		position: relative;
+		font-size: clamp(0.85rem, 1.1vw, 1rem);
+		font-weight: 500;
+		letter-spacing: -0.04em;
+		text-decoration: none;
+	}
+
+	.logo :global(.logo__star) {
+		position: absolute;
+		top: -0.7em;
+		right: -1.4em;
+		rotate: 12deg;
+	}
+
+	.nav {
+		display: flex;
+		gap: clamp(1rem, 3vw, 2.75rem);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.nav a {
+		font-size: clamp(0.85rem, 1.1vw, 1.05rem);
+		letter-spacing: -0.04em;
+		text-decoration: none;
+	}
+
+	.nav a:hover {
+		color: var(--color-accent);
+	}
+</style>

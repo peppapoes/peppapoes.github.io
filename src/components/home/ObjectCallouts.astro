@@ -1,0 +1,100 @@
+---
+/**
+ * The chair / laptop / lamp composition with pink callout lines.
+ * Export the objects from Figma as one transparent PNG and pass it as `src`.
+ */
+interface Props {
+	src?: string;
+	alt?: string;
+}
+
+const { src, alt = 'A chair, a laptop and a lamp' } = Astro.props;
+
+// Coordinates in the 600×390 viewBox of the callout layer.
+const callouts = [
+	{ label: 'digital', dot: [457, 23], path: 'M457 23H367V80', labelAt: [472, 23], align: 'start' },
+	{ label: 'interior', dot: [76, 160], path: 'M76 160H248V240', labelAt: [62, 160], align: 'end' },
+	{ label: 'product', dot: [510, 153], path: 'M510 153V243H482', labelAt: [525, 153], align: 'start' },
+];
+---
+
+<figure class="objects">
+	{src
+		? <img class="objects__image" src={src} alt={alt} loading="lazy" />
+		: <div class="objects__image objects__image--placeholder" role="img" aria-label={alt}>objects image</div>}
+
+	<svg class="objects__lines" viewBox="0 0 600 390" aria-hidden="true">
+		{callouts.map(({ dot, path }) => (
+			<g>
+				<path d={path} />
+				<circle cx={dot[0]} cy={dot[1]} r="6" />
+			</g>
+		))}
+	</svg>
+
+	{callouts.map(({ label, labelAt, align }) => (
+		<figcaption
+			class:list={['objects__label', `objects__label--${align}`]}
+			style={`left: ${(labelAt[0] / 600) * 100}%; top: ${(labelAt[1] / 390) * 100}%`}
+		>
+			{label}
+		</figcaption>
+	))}
+</figure>
+
+<style>
+	.objects {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 600 / 390;
+		margin: 0;
+	}
+
+	.objects__image {
+		position: absolute;
+		left: 36.5%;
+		top: 12.5%;
+		width: 54%;
+		height: 87%;
+		object-fit: contain;
+	}
+
+	.objects__image--placeholder {
+		display: grid;
+		place-items: center;
+		border: 1px dashed rgb(255 255 255 / 0.3);
+		color: rgb(255 255 255 / 0.4);
+		font-size: 0.8rem;
+	}
+
+	.objects__lines {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.objects__lines path {
+		fill: none;
+		stroke: var(--color-accent);
+		stroke-width: 2;
+	}
+
+	.objects__lines circle {
+		fill: var(--color-accent);
+	}
+
+	.objects__label {
+		position: absolute;
+		translate: 0 -55%;
+		color: var(--color-accent);
+		font-family: var(--font-hand);
+		font-size: clamp(0.9rem, 1.4vw, 1.3rem);
+		letter-spacing: 0.04em;
+	}
+
+	.objects__label--end {
+		translate: -100% -55%;
+	}
+</style>

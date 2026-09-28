@@ -1,34 +1,12 @@
 ---
-const title = "Femke De Latter";
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/home/Hero.astro';
+import WordCloud from '../components/home/WordCloud.astro';
+import About from '../components/home/About.astro';
 ---
 
-<!doctype html>
-<html lang="nl">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>{title}</title>
-	</head>
-	<body>
-		<h1>Femke's portfolio coming soon!</h1>
-	</body>
-</html>
-
-<style>
-	body {
-		margin: 0;
-		min-height: 100vh;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #000;
-		color: #fff;
-		font-family: system-ui, sans-serif;
-	}
-
-	h1 {
-		font-weight: 300;
-		letter-spacing: 0.05em;
-		text-align: center;
-	}
-</style>
+<Layout>
+	<Hero />
+	<WordCloud />
+	<About />
+</Layout>

@@ -1,0 +1,79 @@
+---
+import SelectionTag from '../SelectionTag.astro';
+import Star from '../Star.astro';
+
+// Positions are percentages of the hero area, taken from the Figma design.
+const tags = [
+	{ label: 'Visual Design', x: 19, y: 22 },
+	{ label: 'My portfolio', x: 71.5, y: 20, accent: true, href: '#work' },
+	{ label: 'Integration of all courses', x: 47, y: 50 },
+	{ label: 'Motion Design', x: 76.5, y: 67 },
+	{ label: 'Coding & Development', x: 9, y: 75 },
+];
+
+const stars = [
+	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline' },
+	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled' },
+	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled' },
+	{ x: 5, y: 57, size: '2.4vw', variant: 'outline' },
+	{ x: 62, y: 85, size: '2.4vw', variant: 'outline' },
+] as const;
+---
+
+<section class="hero" aria-label="Intro">
+	<h1 class="visually-hidden">Femke De Latter — design portfolio</h1>
+
+	{tags.map(({ label, x, y, accent, href }) => (
+		<SelectionTag
+			class:list={['hero__tag', { 'hero__tag--end': x > 40 }]}
+			style={`left: ${x}%; top: ${y}%`}
+			accent={accent}
+			href={href}
+		>
+			{label}
+		</SelectionTag>
+	))}
+
+	{stars.map(({ x, y, size, variant }) => (
+		<Star
+			class="hero__star"
+			variant={variant}
+			size={`max(${size}, 1rem)`}
+			style={`left: ${x}%; top: ${y}%`}
+		/>
+	))}
+</section>
+
+<style>
+	.hero {
+		position: relative;
+		height: max(58vw, 26rem);
+		margin-top: -5rem; /* let the scene sit behind the header */
+	}
+
+	.hero :global(.hero__tag),
+	.hero :global(.hero__star) {
+		position: absolute;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			height: 30rem;
+		}
+
+		/* Anchor right-side tags to the edge so they stay on screen. */
+		.hero :global(.hero__tag--end) {
+			left: auto !important;
+			right: var(--gutter);
+		}
+	}
+</style>
