@@ -2,6 +2,7 @@ import type { ImageMetadata } from 'astro';
 import milesAndMeals from '../assets/images/milesandmeals_preview.jpg';
 import kickstarter from '../assets/images/kickstarter_preview.jpg';
 import clickGame from '../assets/images/clickgame_preview.jpg';
+import antwerpOnTap from '../assets/images/antwerpontap_preview.jpg';
 
 export type Category = 'visual-design' | 'motion-design' | 'coding' | 'integration';
 
@@ -66,7 +67,7 @@ export const projects: Project[] = [
 		title: 'Antwerp on Tap',
 		category: 'integration',
 		year: 2026,
-		preview: milesAndMeals,
+		preview: antwerpOnTap,
 		previewAlt: 'Preview of Antwerp on Tap',
 	},
 ];
