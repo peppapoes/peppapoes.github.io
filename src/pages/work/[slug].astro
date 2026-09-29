@@ -30,6 +30,7 @@ const hasText = Boolean(project.assignment || project.idea?.length || project.to
 const tabs = [
 	{ id: 'process', label: 'Process' },
 	{ id: 'end-result', label: 'End result' },
+	{ id: 'inspiration', label: 'Inspiration' },
 ];
 // Panel ids differ from the URL hash (#process), so opening a tab from a link doesn't scroll the page.
 const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab-${id}`, hidden: true });
@@ -116,9 +117,9 @@ const stars = [
 					aria-controls={`panel-${id}`}
 					data-topic={id}
 				>
+					<Star class="tabs__star" variant="filled" size="0.6em" />
 					{label}
-					<Star class="tabs__star tabs__star--closed" variant="outline" size="1em" />
-					<Star class="tabs__star tabs__star--open" variant="filled" size="1em" />
+					<Star class="tabs__star" variant="filled" size="0.6em" />
 				</button>
 			))}
 		</div>
@@ -145,6 +146,12 @@ const stars = [
 						preload="metadata"
 						aria-label={`${project.title} video`}
 					/>
+				: <p class="project__soon">more coming soon!</p>}
+		</section>
+
+		<section class="inspiration" {...panelAttrs('inspiration')}>
+			{project.inspiration?.length
+				? <ImageStrip images={project.inspiration} label="Inspiration images" />
 				: <p class="project__soon">more coming soon!</p>}
 		</section>
 	</article>
@@ -232,28 +239,33 @@ const stars = [
 		padding-left: 0.4rem;
 	}
 
+	/* Three equal tabs with lines between them and underneath. */
 	.tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem clamp(1.5rem, 3vw, 3rem);
-		margin: clamp(3rem, 7vw, 6rem) 0 clamp(2rem, 4vw, 3.5rem);
-		padding-left: 0.4rem;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		margin: clamp(3rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3.5rem);
+		border-bottom: 1.5px solid var(--color-fg);
 	}
 
 	.tabs__tab {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		gap: 0.45em;
-		padding: 0.25em 0;
+		justify-content: center;
+		gap: 0.6em;
+		padding: 0.3em 0.25em 0.45em;
 		border: 0;
 		background: none;
 		color: var(--color-fg);
 		font: inherit;
-		font-size: clamp(1.1rem, 1.6vw, 1.5rem);
-		font-weight: 500;
-		letter-spacing: -0.04em;
+		font-size: clamp(1.25rem, 3vw, 2.75rem);
+		font-weight: 700;
+		letter-spacing: -0.06em;
 		cursor: pointer;
 		transition: color 0.2s ease;
+	}
+
+	.tabs__tab + .tabs__tab {
+		border-left: 1.5px solid var(--color-fg);
 	}
 
 	.tabs__tab:hover,
@@ -263,32 +275,26 @@ const stars = [
 
 	.tabs__tab:focus-visible {
 		outline: 1px solid var(--color-fg);
-		outline-offset: 4px;
+		outline-offset: -4px;
 	}
 
-	/* The star is the indicator: outlined while closed, pink and filled when open. */
+	/* The open tab gets a pink star on each side. */
 	.tabs__tab :global(.tabs__star) {
+		flex: 0 0 auto;
 		color: currentColor;
-		transition: rotate 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+		opacity: 0;
+		scale: 0.4;
+		transition: opacity 0.25s ease, scale 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 	}
 
-	.tabs__tab :global(.tabs__star--open),
-	.tabs__tab[aria-expanded='true'] :global(.tabs__star--closed) {
-		display: none;
-	}
-
-	.tabs__tab[aria-expanded='true'] :global(.tabs__star--open) {
-		display: block;
-		color: var(--color-accent);
-		rotate: 20deg;
-	}
-
-	.tabs__tab:hover :global(.tabs__star) {
-		rotate: 20deg;
+	.tabs__tab[aria-expanded='true'] :global(.tabs__star) {
+		opacity: 1;
+		scale: 1;
 	}
 
 	.process:not([hidden]),
-	.result:not([hidden]) {
+	.result:not([hidden]),
+	.inspiration:not([hidden]) {
 		animation: fade-in 0.4s ease;
 	}
 
@@ -304,6 +310,7 @@ const stars = [
 	}
 
 	.process[hidden],
+	.inspiration[hidden],
 	.result[hidden] {
 		display: none;
 	}
@@ -425,8 +432,11 @@ const stars = [
 	@media (prefers-reduced-motion: reduce) {
 		.project :global(.project__star),
 		.process:not([hidden]),
-		.result:not([hidden]) {
+		.result:not([hidden]),
+		.inspiration:not([hidden]),
+		.tabs__tab :global(.tabs__star) {
 			animation: none;
+			transition: none;
 		}
 	}
 

@@ -57,10 +57,12 @@ export interface Project {
 	tools?: Tool[];
 	/** Images in the frame on the project page; falls back to the preview. */
 	gallery?: ProjectImage[];
-	/** Foldable "Process" section: per step an optional text and a scrollable row of images. */
+	/** "Process" tab: per step an optional text and a scrollable row of images. */
 	process?: { title: string; text?: string; images: ProjectImage[] }[];
-	/** Foldable "End result" section. */
+	/** "End result" tab on the project page. */
 	video?: string;
+	/** "Inspiration" tab: a scrollable row of images. */
+	inspiration?: ProjectImage[];
 }
 
 export type ProjectImage = { src: ImageMetadata; alt: string };
