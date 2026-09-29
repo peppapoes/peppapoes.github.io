@@ -6,6 +6,8 @@ import Layout from '../../layouts/Layout.astro';
 import SelectionFrame from '../../components/SelectionFrame.astro';
 import Star from '../../components/Star.astro';
 import ToolIcon from '../../components/work/ToolIcon.astro';
+import FoldSection from '../../components/work/FoldSection.astro';
+import ImageStrip from '../../components/work/ImageStrip.astro';
 import { categoryLabels, projects, type Project } from '../../data/projects';
 
 export const getStaticPaths = (() => projects.map((project) => ({ params: { slug: project.slug }, props: { project } }))) satisfies GetStaticPaths;
@@ -16,13 +18,13 @@ interface Props {
 
 const { project } = Astro.props;
 
-// The framed media: the video first, then the gallery. Falls back to the preview image.
+// The framed media: the gallery, or else the preview image. A video goes to "End result".
 const images = project.gallery?.length
 	? project.gallery
-	: !project.video && project.preview
+	: project.preview
 		? [{ src: project.preview, alt: project.previewAlt ?? '' }]
 		: [];
-const hasMedia = Boolean(project.video || images.length);
+const hasSections = Boolean(project.process?.length || project.video);
 const hasText = Boolean(project.assignment || project.idea?.length || project.tools?.length);
 
 const stars = [
@@ -30,7 +32,7 @@ const stars = [
 	{ x: 80, y: 'top: 36vw', size: '2.6vw', variant: 'outline-alt' },
 	{ x: 68, y: 'top: 58vw', size: '1.4vw', variant: 'outline' },
 	{ x: 7, y: 'top: 64vw', size: '2vw', variant: 'filled' },
-	{ x: 80, y: 'bottom: 2vw', size: '3vw', variant: 'outline-alt' },
+	{ x: 62, y: 'bottom: 1vw', size: '3vw', variant: 'outline-alt' },
 ] as const;
 ---
 
@@ -43,7 +45,7 @@ const stars = [
 		</ol>
 	</nav>
 
-	<article class="project">
+	<article class:list={['project', { 'project--with-sections': hasSections }]}>
 		{stars.map(({ x, y, size, variant }, i) => (
 			<Star
 				class="project__star"
@@ -59,17 +61,8 @@ const stars = [
 				<h1 class="project__title">{project.title}</h1>
 			</header>
 
-			{hasMedia && (
+			{images.length > 0 && (
 				<SelectionFrame class="project__media">
-					{project.video && (
-						<video
-							src={`${project.video}#t=0.1`}
-							controls
-							playsinline
-							preload="metadata"
-							aria-label={`${project.title} video`}
-						/>
-					)}
 					{images.map(({ src, alt }) => (
 						<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
 					))}
@@ -104,6 +97,35 @@ const stars = [
 			{!hasText && <p class="project__soon">more about this project coming soon!</p>}
 		</div>
 	</article>
+
+	{hasSections && (
+		<div class="sections">
+			{project.process?.length ? (
+				<FoldSection title="Process">
+					{project.process.map(({ title, text, images }) => (
+						<section class="step">
+							<h3 class="step__title">{title}</h3>
+							{text && <p class="step__text">{text}</p>}
+							<ImageStrip images={images} label={`${title} images`} />
+						</section>
+					))}
+				</FoldSection>
+			) : null}
+
+			{project.video && (
+				<FoldSection title="End result">
+					<video
+						class="result__video"
+						src={`${project.video}#t=0.1`}
+						controls
+						playsinline
+						preload="metadata"
+						aria-label={`${project.title} video`}
+					/>
+				</FoldSection>
+			)}
+		</div>
+	)}
 </Layout>
 
 <style>
@@ -189,14 +211,47 @@ const stars = [
 		padding: 0.9rem;
 	}
 
-	.project__media video,
 	.project__media img {
 		display: block;
 		width: 100%;
 		height: auto;
 	}
 
-	.project__media video {
+
+	.project--with-sections {
+		padding-bottom: clamp(3rem, 6vw, 5rem);
+	}
+
+	.sections {
+		margin: 0 var(--gutter) clamp(8rem, 14vw, 12rem);
+	}
+
+	.step + .step {
+		margin-top: clamp(2rem, 3.5vw, 3rem);
+	}
+
+	.step__title {
+		margin: 0 0 1rem;
+		padding-left: 0.4rem;
+		font-family: var(--font-hand);
+		font-size: 1rem;
+		font-weight: 400;
+	}
+
+	.step__text {
+		max-width: 44rem;
+		margin: 0 0 1.5rem;
+		padding-left: 0.4rem;
+		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		font-weight: 300;
+		line-height: 1.35;
+		letter-spacing: -0.02em;
+	}
+
+	.result__video {
+		display: block;
+		width: 100%;
+		max-width: 64rem;
 		aspect-ratio: 16 / 9;
 		background: #111;
 	}

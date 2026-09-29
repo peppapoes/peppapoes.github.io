@@ -1,0 +1,82 @@
+---
+/**
+ * A row of images that scrolls sideways and bleeds off the right edge of the
+ * page. Scroll with a trackpad or shift + wheel, or drag it with the mouse.
+ */
+import { Image } from 'astro:assets';
+import type { ProjectImage } from '../../data/projects';
+
+interface Props {
+	images: ProjectImage[];
+	label: string;
+}
+
+const { images, label } = Astro.props;
+---
+
+<div class="strip" data-strip tabindex="0" role="region" aria-label={label}>
+	{images.map(({ src, alt }) => (
+		<Image class="strip__item" src={src} alt={alt} widths={[600, 1000, 1400]} sizes="40vw" loading="lazy" draggable="false" />
+	))}
+</div>
+
+<script>
+	// Drag to scroll with a mouse (touch and trackpads scroll natively).
+	for (const strip of document.querySelectorAll<HTMLElement>('[data-strip]')) {
+		let startX = 0;
+		let startScroll = 0;
+		let dragging = false;
+
+		strip.addEventListener('pointerdown', (e) => {
+			if (e.pointerType !== 'mouse') return;
+			dragging = true;
+			startX = e.clientX;
+			startScroll = strip.scrollLeft;
+			strip.setPointerCapture(e.pointerId);
+			strip.classList.add('is-dragging');
+		});
+		strip.addEventListener('pointermove', (e) => {
+			if (dragging) strip.scrollLeft = startScroll - (e.clientX - startX);
+		});
+		const stop = () => {
+			dragging = false;
+			strip.classList.remove('is-dragging');
+		};
+		strip.addEventListener('pointerup', stop);
+		strip.addEventListener('pointercancel', stop);
+	}
+</script>
+
+<style>
+	.strip {
+		display: flex;
+		gap: clamp(0.5rem, 1vw, 1rem);
+		margin-right: calc(-1 * var(--gutter));
+		padding-right: var(--gutter);
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scrollbar-width: none;
+		cursor: grab;
+	}
+
+	.strip::-webkit-scrollbar {
+		display: none;
+	}
+
+	.strip.is-dragging {
+		cursor: grabbing;
+	}
+
+	.strip:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 4px;
+	}
+
+	.strip__item {
+		flex: 0 0 auto;
+		width: auto;
+		height: clamp(10rem, 22vw, 22rem);
+		object-fit: cover;
+		user-select: none;
+	}
+</style>

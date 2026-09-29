@@ -5,6 +5,17 @@ import clickGame from '../assets/images/clickgame_preview.jpg';
 import antwerpOnTap from '../assets/images/antwerpontap_preview.jpg';
 import kickstarterVideo from '../assets/videos/kickstarter.mp4';
 
+// Every image in src/assets/images, by file name, so projects can list many at once.
+const imageFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/images/*.{png,jpg,jpeg,webp}', { eager: true });
+const image = (file: string) => {
+	const found = imageFiles[`../assets/images/${file}`];
+	if (!found) throw new Error(`Image not found in src/assets/images: ${file}`);
+	return found.default;
+};
+/** `series('pitchdeck', 3, 'png', 'Pitch deck slide')` → pitchdeck1.png … pitchdeck3.png */
+const series = (name: string, count: number, ext: string, alt: string) =>
+	Array.from({ length: count }, (_, i) => ({ src: image(`${name}${i + 1}.${ext}`), alt: `${alt} ${i + 1}` }));
+
 export type Category = 'visual-design' | 'motion-design' | 'coding' | 'ux' | 'integration';
 
 /** Label shown above a project's title. */
@@ -44,11 +55,15 @@ export interface Project {
 	/** One string per paragraph. */
 	idea?: string[];
 	tools?: Tool[];
-	/** Shown first in the framed media on the project page. */
+	/** Images in the frame on the project page; falls back to the preview. */
+	gallery?: ProjectImage[];
+	/** Foldable "Process" section: per step an optional text and a scrollable row of images. */
+	process?: { title: string; text?: string; images: ProjectImage[] }[];
+	/** Foldable "End result" section. */
 	video?: string;
-	/** More images for the framed media on the project page. */
-	gallery?: { src: ImageMetadata; alt: string }[];
 }
+
+export type ProjectImage = { src: ImageMetadata; alt: string };
 
 export const projects: Project[] = [
 	{
@@ -84,6 +99,12 @@ export const projects: Project[] = [
 		video: kickstarterVideo,
 		assignment: 'Pick a Kickstarter project and make a promoting video for it.',
 		tools: ['after-effects', 'photoshop'],
+		// TODO: storyboard4.png is only a 69px-wide slice; add it here once it's exported in full.
+		process: [
+			{ title: 'Storyboard', images: series('storyboard', 3, 'png', 'Storyboard page') },
+			{ title: 'Styleframes', images: series('styleframe', 3, 'png', 'Styleframe') },
+			{ title: 'Pitch deck', images: series('pitchdeck', 11, 'png', 'Pitch deck slide') },
+		],
 	},
 	{
 		slug: 'antwerp-on-tap',

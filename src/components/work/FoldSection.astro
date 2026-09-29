@@ -1,0 +1,104 @@
+---
+/** A section on a project page that folds open, like "Process" or "End result". */
+interface Props {
+	title: string;
+	open?: boolean;
+}
+
+const { title, open = false } = Astro.props;
+---
+
+<details class="fold" open={open}>
+	<summary class="fold__summary">
+		<h2 class="fold__title">{title}</h2>
+		<svg class="fold__icon" viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M5 9l7 7 7-7" />
+		</svg>
+	</summary>
+	<div class="fold__content">
+		<slot />
+	</div>
+</details>
+
+<style>
+	.fold {
+		border-top: 1.5px solid var(--color-fg);
+		interpolate-size: allow-keywords;
+	}
+
+	.fold:last-of-type {
+		border-bottom: 1.5px solid var(--color-fg);
+	}
+
+	/* Smoothly grow open where supported; other browsers simply open. */
+	.fold::details-content {
+		block-size: 0;
+		overflow-x: visible;
+		overflow-y: clip;
+		transition:
+			block-size 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+			content-visibility 0.6s allow-discrete;
+	}
+
+	.fold[open]::details-content {
+		block-size: auto;
+	}
+
+	.fold__summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-block: clamp(1rem, 2vw, 1.75rem);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.fold__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.fold__summary:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 4px;
+	}
+
+	.fold__title {
+		margin: 0;
+		padding-left: 0.4rem;
+		font-size: clamp(2rem, 3.6vw, 3.4rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.06em;
+		transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.fold__summary:hover .fold__title {
+		translate: 0.4rem 0;
+	}
+
+	.fold__icon {
+		flex: 0 0 auto;
+		width: clamp(1.75rem, 2.6vw, 2.5rem);
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.5;
+		transition: rotate 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.fold[open] .fold__icon {
+		rotate: 180deg;
+	}
+
+	.fold__content {
+		padding-bottom: clamp(2rem, 4vw, 3.5rem);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.fold::details-content,
+		.fold__title,
+		.fold__icon {
+			transition: none;
+		}
+	}
+</style>
