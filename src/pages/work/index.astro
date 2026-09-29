@@ -1,0 +1,198 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SelectionFrame from '../../components/SelectionFrame.astro';
+import Star from '../../components/Star.astro';
+import ProjectRow from '../../components/work/ProjectRow.astro';
+import { filterLabels, projects, type Category } from '../../data/projects';
+
+const filters = Object.entries(filterLabels) as [Category, string][];
+
+// Positions from the Figma design: x as % of the page width, y in vw so they scale with it.
+// The last two are measured from the bottom, so they stay below the list however long it gets.
+const stars = [
+	{ x: 50, y: 'top: 1vw', size: '1.4vw', variant: 'outline' },
+	{ x: 17, y: 'top: 30vw', size: '3.2vw', variant: 'outline-alt', desktopOnly: true },
+	{ x: 7, y: 'top: 58vw', size: '2.2vw', variant: 'filled', desktopOnly: true },
+	{ x: 23.5, y: 'top: 88vw', size: '1.4vw', variant: 'outline', desktopOnly: true },
+	{ x: 80.5, y: 'bottom: 2vw', size: '3.2vw', variant: 'outline-alt' },
+] as const;
+---
+
+<Layout title="My Work — FDSGNS" description="Projects by Femke De Latter: visual design, motion design, coding, UX and more.">
+	<div class="work">
+		{stars.map(({ x, y, size, variant, ...star }, i) => (
+			<Star
+				class:list={['work__star', { 'work__star--desktop': 'desktopOnly' in star }]}
+				variant={variant}
+				size={`max(${size}, 1rem)`}
+				style={`left: ${x}%; ${y}; animation-delay: -${i * 1.4}s`}
+			/>
+		))}
+
+		<h1 class="work__title">
+			<SelectionFrame as="span" accent class="work__title-my">MY</SelectionFrame>
+			<span>WORK</span>
+		</h1>
+
+		<div class="work__main">
+			<ul class="filters" aria-label="Filter projects">
+				{filters.map(([category, label]) => (
+					<li>
+						<button class="filters__button" type="button" data-filter={category} aria-pressed="false">
+							{label}
+						</button>
+					</li>
+				))}
+			</ul>
+
+			<ul class="work__list">
+				{projects.map((project) => <ProjectRow project={project} />)}
+			</ul>
+
+			<p class="work__empty" hidden>more projects coming soon!</p>
+		</div>
+	</div>
+</Layout>
+
+<script>
+	// Old links pointed to /work#slug; send them to the project's own page.
+	const slug = location.hash.slice(1);
+	if (slug && /^[a-z0-9-]+$/.test(slug)) location.replace(`/work/${slug}`);
+
+	const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+	const rows = [...document.querySelectorAll<HTMLElement>('.work__list [data-category]')];
+	const empty = document.querySelector<HTMLElement>('.work__empty')!;
+
+	// Clicking a filter shows only that category; clicking it again shows everything.
+	const applyFilter = (category: string | null) => {
+		for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.filter === category));
+		for (const row of rows) row.hidden = category !== null && row.dataset.category !== category;
+		empty.hidden = rows.some((row) => !row.hidden);
+
+		const url = new URL(location.href);
+		if (category) url.searchParams.set('filter', category);
+		else url.searchParams.delete('filter');
+		history.replaceState(null, '', url);
+	};
+
+	for (const button of buttons) {
+		button.addEventListener('click', () => {
+			applyFilter(button.getAttribute('aria-pressed') === 'true' ? null : button.dataset.filter!);
+		});
+	}
+
+	const initial = new URL(location.href).searchParams.get('filter');
+	if (initial && buttons.some((b) => b.dataset.filter === initial)) applyFilter(initial);
+</script>
+
+<style>
+	.work {
+		position: relative;
+		display: grid;
+		grid-template-columns: 30vw minmax(0, 1fr);
+		align-items: start;
+		padding: clamp(1rem, 2.5vw, 2.5rem) var(--gutter) clamp(6rem, 12vw, 10rem) 0;
+	}
+
+	.work :global(.work__star) {
+		position: absolute;
+		animation: bob 6s ease-in-out infinite alternate;
+	}
+
+	@keyframes bob {
+		from { transform: translateY(-5px) rotate(-6deg); }
+		to { transform: translateY(5px) rotate(6deg); }
+	}
+
+	.work__title {
+		position: sticky;
+		top: 2rem;
+		display: grid;
+		justify-items: start;
+		gap: 0.1em;
+		margin: 0;
+		margin-top: clamp(2rem, 4vw, 3.5rem);
+		padding-left: calc(var(--gutter) + 1.5vw);
+		color: var(--color-accent);
+		font-size: clamp(3.5rem, 6.3vw, 6rem);
+		font-weight: 700;
+		line-height: 0.85;
+		letter-spacing: -0.04em;
+	}
+
+	.work__title :global(.work__title-my) {
+		--handle: 0.14em;
+		padding: 0.1em 0.12em 0.02em;
+	}
+
+	.work__title > span:last-child {
+		padding-left: 0.1em;
+	}
+
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem clamp(1.25rem, 3vw, 3rem);
+		margin: 0 0 clamp(1rem, 1.8vw, 1.6rem);
+		padding: 0;
+		list-style: none;
+	}
+
+	.filters__button {
+		padding: 0.25em 0;
+		border: 0;
+		background: none;
+		color: var(--color-fg);
+		font: inherit;
+		font-size: clamp(0.9rem, 1.25vw, 1.15rem);
+		letter-spacing: -0.04em;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.filters__button:hover,
+	.filters__button[aria-pressed='true'] {
+		color: var(--color-accent);
+	}
+
+	.filters__button:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 4px;
+	}
+
+	.work__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.work__empty {
+		margin: 2rem 0 0;
+		font-family: var(--font-hand);
+		font-size: clamp(1.2rem, 2vw, 1.6rem);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.work :global(.work__star) {
+			animation: none;
+		}
+	}
+
+	@media (max-width: 800px) {
+		.work {
+			grid-template-columns: minmax(0, 1fr);
+			row-gap: 2.5rem;
+			padding-left: var(--gutter);
+		}
+
+		.work__title {
+			position: static;
+			padding-left: 0;
+		}
+
+		/* These sit on top of the list once it's full width. */
+		.work :global(.work__star--desktop) {
+			display: none;
+		}
+	}
+</style>

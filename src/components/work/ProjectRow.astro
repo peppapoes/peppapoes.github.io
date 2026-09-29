@@ -1,115 +1,51 @@
 ---
-/**
- * One project in the /work list. Closed it shows the summary row; opened it
- * adds the video, the assignment, the idea and a gallery. Rows share a `name`,
- * so opening one closes the others. Projects without any of those yet are a
- * plain row that can't be opened.
- */
+/** One project in the /work list, linking to its own page. */
 import { Image } from 'astro:assets';
-import ProjectGallery from './ProjectGallery.astro';
-import { categoryLabels, type Project } from '../../data/projects';
+import { categoryLabels, projectUrl, type Project } from '../../data/projects';
 
 interface Props {
 	project: Project;
 }
 
 const { project } = Astro.props;
-const expandable = Boolean(project.video || project.assignment || project.idea || project.gallery?.length);
-const Row = expandable ? 'details' : 'article';
-const Summary = expandable ? 'summary' : 'div';
 ---
 
-<Row id={project.slug} class="row" name={expandable ? 'projects' : undefined}>
-	<Summary class:list={['row__summary', { 'row__summary--static': !expandable }]}>
+<li class="row" data-category={project.category}>
+	<a class="row__link" href={projectUrl(project)}>
 		<span class="row__heading">
 			<span class="row__category">{categoryLabels[project.category]}</span>
 			<span class="row__title">{project.title}</span>
 		</span>
-		<Image
-			class="row__image"
-			src={project.preview}
-			alt={project.previewAlt}
-			widths={[400, 600]}
-			sizes="(max-width: 800px) 90vw, 20vw"
-		/>
-		<span class="row__year">{project.year}</span>
-	</Summary>
-
-	{expandable && (
-	<div class="row__content">
-		{project.video && (
-			<video
-				class="row__video"
-				src={`${project.video}#t=0.1`}
-				controls
-				playsinline
-				preload="metadata"
-				aria-label={`${project.title} video`}
+		{project.preview && (
+			<Image
+				class="row__image"
+				src={project.preview}
+				alt={project.previewAlt ?? ''}
+				widths={[400, 600]}
+				sizes="(max-width: 800px) 90vw, 20vw"
 			/>
 		)}
-
-		{(project.assignment || project.idea) && (
-			<div class="row__text">
-				{project.assignment && (
-					<section>
-						<h3 class="row__label">Assignment</h3>
-						<p>{project.assignment}</p>
-					</section>
-				)}
-				{project.idea && (
-					<section>
-						<h3 class="row__label">Idea</h3>
-						<p>{project.idea}</p>
-					</section>
-				)}
-			</div>
-		)}
-
-		{project.gallery?.length ? <ProjectGallery images={project.gallery} /> : null}
-	</div>
-	)}
-</Row>
+		<span class="row__year">{project.year}</span>
+	</a>
+</li>
 
 <style>
 	.row {
 		border-top: 1.5px solid var(--color-fg);
-		scroll-margin-top: 2rem; /* breathing room when opened from a link */
-		interpolate-size: allow-keywords;
 	}
 
-	/* Smoothly grow open where supported; other browsers simply open. */
-	.row::details-content {
-		block-size: 0;
-		overflow-x: visible;
-		overflow-y: clip;
-		transition:
-			block-size 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
-			content-visibility 0.6s allow-discrete;
-	}
-
-	.row[open]::details-content {
-		block-size: auto;
-	}
-
-	.row__summary {
+	.row__link {
 		display: grid;
 		grid-template-columns: 1fr auto minmax(4rem, 8vw);
 		align-items: start;
 		gap: 2rem;
-		padding-block: clamp(1.5rem, 3vw, 2.75rem);
-		cursor: pointer;
-		list-style: none;
+		min-height: clamp(10rem, 16vw, 15rem);
+		padding-block: clamp(1.5rem, 2.5vw, 2.25rem);
+		color: inherit;
+		text-decoration: none;
 	}
 
-	.row__summary--static {
-		cursor: default;
-	}
-
-	.row__summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.row__summary:focus-visible {
+	.row__link:focus-visible {
 		outline: 1px solid var(--color-fg);
 		outline-offset: 4px;
 	}
@@ -130,15 +66,16 @@ const Summary = expandable ? 'summary' : 'div';
 		font-weight: 700;
 		line-height: 1;
 		letter-spacing: -0.06em;
-		transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.3s ease;
+		transition: translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 	}
 
-	.row__summary:not(.row__summary--static):hover .row__title,
-	.row[open] .row__title {
+	.row__link:hover .row__title,
+	.row__link:focus-visible .row__title {
 		translate: 0.4rem 0;
 	}
 
 	.row__image {
+		grid-column: 2;
 		width: clamp(12rem, 20vw, 21.5rem);
 		height: auto;
 		aspect-ratio: 345 / 233;
@@ -147,60 +84,26 @@ const Summary = expandable ? 'summary' : 'div';
 	}
 
 	.row__year {
+		grid-column: 3;
 		justify-self: end;
 		font-size: clamp(1rem, 1.35vw, 1.3rem);
 		letter-spacing: -0.03em;
 	}
 
-	/* Spans the title and image columns, like in the design. The src ends in #t=0.1
-	   so the video's own first frame is the cover and nothing jumps when it starts. */
-	.row__video {
-		display: block;
-		width: calc(100% - max(4rem, 8vw) - 2rem);
-		aspect-ratio: 16 / 9;
-		margin-bottom: 2.5rem;
-		background: #111;
-		object-fit: cover;
-	}
-
-	.row__text {
-		display: grid;
-		gap: 2.5rem;
-		max-width: 38rem;
-		padding: 0 0 2.5rem 0.4rem;
-	}
-
-	.row__label {
-		margin: 0 0 1rem;
-		font-family: var(--font-hand);
-		font-size: 1rem;
-		font-weight: 400;
-	}
-
-	.row__text p {
-		margin: 0;
-		font-size: clamp(0.95rem, 1.2vw, 1.1rem);
-		font-weight: 300;
-		line-height: 1.4;
-		letter-spacing: -0.02em;
-	}
-
-	/* The gallery bleeds out of the list column to the full page width. */
-	.row__content :global(.gallery) {
-		width: 100vw;
-		margin-left: calc(-1 * var(--list-start, 0px));
-		padding: 0 var(--gutter) clamp(2rem, 4vw, 3.5rem);
-		scroll-padding-inline: var(--gutter);
-	}
-
 	@media (max-width: 800px) {
-		.row__summary {
+		.row__link {
 			grid-template-columns: 1fr auto;
 			gap: 1rem;
+			min-height: 0;
 		}
 
 		.row__heading {
 			padding-top: 0;
+		}
+
+		.row__year {
+			grid-column: 2;
+			grid-row: 1;
 		}
 
 		.row__image {
@@ -208,10 +111,6 @@ const Summary = expandable ? 'summary' : 'div';
 			grid-row: 2;
 			width: 100%;
 			min-width: 0;
-		}
-
-		.row__video {
-			width: 100%;
 		}
 	}
 </style>

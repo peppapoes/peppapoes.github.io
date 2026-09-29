@@ -20,7 +20,7 @@ const href = project && projectUrl(project);
 	{project ? (
 		<a class="preview__link" href={href} aria-label={`View ${project.title}`}>
 			<SelectionFrame class="preview__frame">
-				<Image src={project.preview} alt="" widths={[400, 600]} sizes="(max-width: 640px) 90vw, 26rem" />
+				{project.preview && <Image src={project.preview} alt="" widths={[400, 600]} sizes="(max-width: 640px) 90vw, 26rem" />}
 			</SelectionFrame>
 
 			<span class="preview__info">

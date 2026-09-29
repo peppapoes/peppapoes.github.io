@@ -1,0 +1,269 @@
+---
+/** A project's own page, built once for every project in src/data/projects.ts. */
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import Layout from '../../layouts/Layout.astro';
+import SelectionFrame from '../../components/SelectionFrame.astro';
+import Star from '../../components/Star.astro';
+import ToolIcon from '../../components/work/ToolIcon.astro';
+import { categoryLabels, projects, type Project } from '../../data/projects';
+
+export const getStaticPaths = (() => projects.map((project) => ({ params: { slug: project.slug }, props: { project } }))) satisfies GetStaticPaths;
+
+interface Props {
+	project: Project;
+}
+
+const { project } = Astro.props;
+
+// The framed media: the video first, then the gallery. Falls back to the preview image.
+const images = project.gallery?.length
+	? project.gallery
+	: !project.video && project.preview
+		? [{ src: project.preview, alt: project.previewAlt ?? '' }]
+		: [];
+const hasMedia = Boolean(project.video || images.length);
+const hasText = Boolean(project.assignment || project.idea?.length || project.tools?.length);
+
+const stars = [
+	{ x: 47.5, y: 'top: 8rem', size: '1.4vw', variant: 'outline' },
+	{ x: 80, y: 'top: 36vw', size: '2.6vw', variant: 'outline-alt' },
+	{ x: 68, y: 'top: 58vw', size: '1.4vw', variant: 'outline' },
+	{ x: 7, y: 'top: 64vw', size: '2vw', variant: 'filled' },
+	{ x: 80, y: 'bottom: 2vw', size: '3vw', variant: 'outline-alt' },
+] as const;
+---
+
+<Layout title={`${project.title} — FDSGNS`} description={project.assignment ?? `${project.title}, a ${categoryLabels[project.category].toLowerCase()} project by Femke De Latter.`}>
+	<nav class="crumbs" aria-label="Breadcrumb">
+		<ol>
+			<li><a href="/work">My Work</a></li>
+			<li><a href={`/work?filter=${project.category}`}>{categoryLabels[project.category]}</a></li>
+			<li><span aria-current="page">{project.title}</span></li>
+		</ol>
+	</nav>
+
+	<article class="project">
+		{stars.map(({ x, y, size, variant }, i) => (
+			<Star
+				class="project__star"
+				variant={variant}
+				size={`max(${size}, 1rem)`}
+				style={`left: ${x}%; ${y}; animation-delay: -${i * 1.4}s`}
+			/>
+		))}
+
+		<div class="project__main">
+			<header class="project__heading">
+				<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
+				<h1 class="project__title">{project.title}</h1>
+			</header>
+
+			{hasMedia && (
+				<SelectionFrame class="project__media">
+					{project.video && (
+						<video
+							src={`${project.video}#t=0.1`}
+							controls
+							playsinline
+							preload="metadata"
+							aria-label={`${project.title} video`}
+						/>
+					)}
+					{images.map(({ src, alt }) => (
+						<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
+					))}
+				</SelectionFrame>
+			)}
+		</div>
+
+		<div class="project__info">
+			{project.assignment && (
+				<section>
+					<h2 class="project__label">Assignment</h2>
+					<p>{project.assignment}</p>
+				</section>
+			)}
+
+			{project.idea?.length ? (
+				<section>
+					<h2 class="project__label">Idea</h2>
+					{project.idea.map((paragraph) => <p>{paragraph}</p>)}
+				</section>
+			) : null}
+
+			{project.tools?.length ? (
+				<section class="project__tools">
+					<h2 class="project__label">Used tools</h2>
+					<ul>
+						{project.tools.map((tool) => <ToolIcon tool={tool} />)}
+					</ul>
+				</section>
+			) : null}
+
+			{!hasText && <p class="project__soon">more about this project coming soon!</p>}
+		</div>
+	</article>
+</Layout>
+
+<style>
+	.crumbs ol {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin: 0 var(--gutter);
+		padding: clamp(0.5rem, 1.5vw, 1.25rem) 0 1rem;
+		list-style: none;
+		font-size: clamp(0.85rem, 1.1vw, 1rem);
+		letter-spacing: -0.03em;
+	}
+
+	.crumbs li + li::before {
+		content: '/';
+		margin-right: 0.4rem;
+		opacity: 0.5;
+	}
+
+	.crumbs a {
+		color: inherit;
+		text-decoration: none;
+		opacity: 0.7;
+		transition: color 0.2s ease, opacity 0.2s ease;
+	}
+
+	.crumbs a:hover,
+	.crumbs a:focus-visible {
+		color: var(--color-accent);
+		opacity: 1;
+	}
+
+	.crumbs [aria-current] {
+		color: var(--color-accent);
+	}
+
+	.project {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		column-gap: clamp(2rem, 6vw, 7rem);
+		align-items: start;
+		margin: 0 var(--gutter);
+		padding: clamp(1.5rem, 2.5vw, 2.5rem) 0 clamp(8rem, 16vw, 14rem);
+		border-top: 1.5px solid var(--color-fg);
+	}
+
+	.project :global(.project__star) {
+		position: absolute;
+		animation: bob 6s ease-in-out infinite alternate;
+	}
+
+	@keyframes bob {
+		from { transform: translateY(-5px) rotate(-6deg); }
+		to { transform: translateY(5px) rotate(6deg); }
+	}
+
+	.project__heading {
+		margin-bottom: clamp(2rem, 4vw, 3.5rem);
+		padding-left: 0.4rem;
+	}
+
+	.project__category {
+		margin: 0 0 0.2em;
+		font-family: var(--font-hand);
+		font-size: clamp(1.2rem, 1.9vw, 1.7rem);
+	}
+
+	.project__title {
+		margin: 0;
+		font-size: clamp(2.5rem, 4.6vw, 4.4rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.06em;
+	}
+
+	.project :global(.project__media) {
+		--handle: 1.1rem;
+		display: grid;
+		gap: 0.6rem;
+		max-width: 44rem;
+		padding: 0.9rem;
+	}
+
+	.project__media video,
+	.project__media img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.project__media video {
+		aspect-ratio: 16 / 9;
+		background: #111;
+	}
+
+	.project__info {
+		display: grid;
+		gap: clamp(2.5rem, 4vw, 3.5rem);
+		padding-top: 1.5rem;
+	}
+
+	.project__info section {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.project__label {
+		margin: 0;
+		font-family: var(--font-hand);
+		font-size: 1.1rem;
+		font-weight: 400;
+	}
+
+	.project__info p {
+		margin: 0;
+		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		font-weight: 300;
+		line-height: 1.35;
+		letter-spacing: -0.02em;
+	}
+
+	.project__info section p + p {
+		margin-top: 0.6em;
+	}
+
+	.project__tools {
+		margin-top: clamp(1rem, 4vw, 4rem);
+	}
+
+	.project__tools ul {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.9rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.project__info .project__soon {
+		font-family: var(--font-hand);
+		font-size: clamp(1.2rem, 2vw, 1.6rem);
+		font-weight: 400;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.project :global(.project__star) {
+			animation: none;
+		}
+	}
+
+	@media (max-width: 800px) {
+		.project {
+			grid-template-columns: minmax(0, 1fr);
+			row-gap: 2.5rem;
+		}
+
+		.project__info {
+			padding-top: 0;
+		}
+	}
+</style>

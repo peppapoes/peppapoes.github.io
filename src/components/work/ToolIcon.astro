@@ -1,0 +1,47 @@
+---
+/** App-style tile for a tool used in a project. */
+import type { Tool } from '../../data/projects';
+
+interface Props {
+	tool: Tool;
+}
+
+const tools: Record<Tool, { name: string; short: string; bg: string; fg: string }> = {
+	'after-effects': { name: 'After Effects', short: 'Ae', bg: '#00005b', fg: '#9999ff' },
+	photoshop: { name: 'Photoshop', short: 'Ps', bg: '#001e36', fg: '#31a8ff' },
+	illustrator: { name: 'Illustrator', short: 'Ai', bg: '#330000', fg: '#ff9a00' },
+	indesign: { name: 'InDesign', short: 'Id', bg: '#49021f', fg: '#ff3366' },
+	figma: { name: 'Figma', short: 'Fg', bg: '#1e1e1e', fg: '#ffffff' },
+};
+
+const { name, short, bg, fg } = tools[Astro.props.tool];
+---
+
+<li class="tool" style={`--bg: ${bg}; --fg: ${fg}`} title={name}>
+	<span aria-hidden="true">{short}</span>
+	<span class="visually-hidden">{name}</span>
+</li>
+
+<style>
+	.tool {
+		display: grid;
+		place-items: center;
+		width: clamp(3.5rem, 5.2vw, 4.75rem);
+		aspect-ratio: 1;
+		border-radius: 18%;
+		background: var(--bg);
+		color: var(--fg);
+		font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+</style>
