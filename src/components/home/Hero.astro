@@ -46,7 +46,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 						<>
 							<SelectionTag href={projectUrl(project)}>{label}</SelectionTag>
 							<div
-								class:list={['float__panel', { 'float__panel--up': y >= 50, 'float__panel--left': x > 45 }]}
+								class:list={['float__panel', { 'float__panel--end': x > 60 }]}
 							>
 								<ProjectPreview id={`preview-${category}`} heading={label} project={project} />
 							</div>
@@ -153,35 +153,28 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		to { transform: translateY(6px) rotate(8deg); }
 	}
 
+	/* The card opens up out of its tag: it starts at the tag's corner, small, and
+	   grows to full size while the tag fades out, so the card's heading takes its place. */
 	.float__panel {
 		position: absolute;
-		top: calc(100% + 0.75rem);
-		left: 2rem;
+		top: 0;
+		left: 0;
 		opacity: 0;
-		scale: 0.96;
+		scale: 0.3;
 		visibility: hidden;
 		pointer-events: none;
 		transform-origin: top left;
 		transition:
-			opacity 0.35s ease,
-			scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
-			visibility 0.35s;
+			opacity 0.25s ease,
+			scale 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+			visibility 0.45s;
 	}
 
-	.float__panel--up {
-		top: auto;
-		bottom: calc(100% + 0.75rem);
-		transform-origin: bottom left;
-	}
-
-	.float__panel--left {
+	/* Tags on the right open towards the left, so the card stays on screen. */
+	.float__panel--end {
 		left: auto;
-		right: -2rem;
+		right: 0;
 		transform-origin: top right;
-	}
-
-	.float__panel--up.float__panel--left {
-		transform-origin: bottom right;
 	}
 
 	.float[data-open] .float__panel {
@@ -189,6 +182,14 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		scale: 1;
 		visibility: visible;
 		pointer-events: auto;
+	}
+
+	.float :global(.tag) {
+		transition: opacity 0.2s ease, scale 0.3s ease;
+	}
+
+	.float[data-open] :global(.tag) {
+		opacity: 0;
 	}
 
 	.visually-hidden {
