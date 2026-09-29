@@ -99,9 +99,8 @@ export const projects: Project[] = [
 		video: kickstarterVideo,
 		assignment: 'Pick a Kickstarter project and make a promoting video for it.',
 		tools: ['after-effects', 'photoshop'],
-		// TODO: storyboard4.png is only a 69px-wide slice; add it here once it's exported in full.
 		process: [
-			{ title: 'Storyboard', images: series('storyboard', 3, 'png', 'Storyboard page') },
+			{ title: 'Storyboard', images: series('storyboard', 4, 'png', 'Storyboard page') },
 			{ title: 'Styleframes', images: series('styleframe', 3, 'png', 'Styleframe') },
 			{ title: 'Pitch deck', images: series('pitchdeck', 11, 'png', 'Pitch deck slide') },
 		],
