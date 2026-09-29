@@ -23,7 +23,7 @@ const images = project.gallery?.length
 	: project.preview
 		? [{ src: project.preview, alt: project.previewAlt ?? '' }]
 		: [];
-const hasText = Boolean(project.assignment || project.idea?.length || project.tools?.length);
+const hasText = Boolean(project.assignment || project.idea?.length);
 
 // Below the overview, every project page has the same tabs; each opens its topic
 // underneath (and closes it again). Topics without content yet say so.
@@ -35,13 +35,6 @@ const tabs = [
 // Panel ids differ from the URL hash (#process), so opening a tab from a link doesn't scroll the page.
 const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab-${id}`, hidden: true });
 
-const stars = [
-	{ x: 47.5, y: 'top: 8rem', size: '1.4vw', variant: 'outline' },
-	{ x: 80, y: 'top: 36vw', size: '2.6vw', variant: 'outline-alt' },
-	{ x: 68, y: 'top: 58vw', size: '1.4vw', variant: 'outline' },
-	{ x: 7, y: 'top: 64vw', size: '2vw', variant: 'filled' },
-	{ x: 62, y: 'bottom: 1vw', size: '3vw', variant: 'outline-alt' },
-] as const;
 ---
 
 <Layout title={`${project.title} — FDSGNS`} description={project.assignment ?? `${project.title}, a ${categoryLabels[project.category].toLowerCase()} project by Femke De Latter.`}>
@@ -54,15 +47,6 @@ const stars = [
 	</nav>
 
 	<article class="project">
-		{stars.map(({ x, y, size, variant }, i) => (
-			<Star
-				class="project__star"
-				variant={variant}
-				size={`max(${size}, 1rem)`}
-				style={`left: ${x}%; ${y}; animation-delay: -${i * 1.4}s`}
-			/>
-		))}
-
 		<section class="overview">
 			<div class="project__main">
 				<header class="project__heading">
@@ -91,15 +75,6 @@ const stars = [
 					<section>
 						<h2 class="project__label">Idea</h2>
 						{project.idea.map((paragraph) => <p>{paragraph}</p>)}
-					</section>
-				) : null}
-
-				{project.tools?.length ? (
-					<section class="project__tools">
-						<h2 class="project__label">Used tools</h2>
-						<ul>
-							{project.tools.map((tool) => <ToolIcon tool={tool} />)}
-						</ul>
 					</section>
 				) : null}
 
@@ -154,6 +129,15 @@ const stars = [
 				? <ImageStrip images={project.inspiration} label="Inspiration images" />
 				: <p class="project__soon">more coming soon!</p>}
 		</section>
+
+		{project.tools?.length ? (
+			<section class="project__tools">
+				<h2 class="project__label">Used tools</h2>
+				<ul>
+					{project.tools.map((tool) => <ToolIcon tool={tool} />)}
+				</ul>
+			</section>
+		) : null}
 	</article>
 </Layout>
 
@@ -224,18 +208,8 @@ const stars = [
 		border-top: 1.5px solid var(--color-fg);
 	}
 
-	.project :global(.project__star) {
-		position: absolute;
-		animation: bob 6s ease-in-out infinite alternate;
-	}
-
-	@keyframes bob {
-		from { transform: translateY(-5px) rotate(-6deg); }
-		to { transform: translateY(5px) rotate(6deg); }
-	}
-
 	.project__heading {
-		margin-bottom: clamp(2rem, 4vw, 3.5rem);
+		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 		padding-left: 0.4rem;
 	}
 
@@ -243,7 +217,7 @@ const stars = [
 	.tabs {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		margin: clamp(3rem, 5vw, 4.5rem) 0 clamp(2rem, 4vw, 3.5rem);
+		margin: clamp(2rem, 3.5vw, 3rem) 0 clamp(2rem, 4vw, 3.5rem);
 		border-bottom: 1.5px solid var(--color-fg);
 	}
 
@@ -333,7 +307,8 @@ const stars = [
 		--handle: 1.1rem;
 		display: grid;
 		gap: 0.6rem;
-		max-width: min(44rem, calc((100svh - 18rem) * 1.48));
+		/* Small enough that the tabs below still show on the first screen. */
+		max-width: min(34rem, calc((100svh - 31.5rem) * 1.48));
 		padding: 0.9rem;
 	}
 
@@ -376,13 +351,13 @@ const stars = [
 
 	.project__info {
 		display: grid;
-		gap: clamp(2.5rem, 4vw, 3.5rem);
+		gap: clamp(1.5rem, 2.5vw, 2.25rem);
 		padding-top: 1.5rem;
 	}
 
 	.project__info section {
 		display: grid;
-		gap: 1rem;
+		gap: 0.6rem;
 	}
 
 	.project__label {
@@ -394,7 +369,7 @@ const stars = [
 
 	.project__info p {
 		margin: 0;
-		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		font-size: clamp(0.95rem, 1.15vw, 1.15rem);
 		font-weight: 300;
 		line-height: 1.35;
 		letter-spacing: -0.02em;
@@ -405,7 +380,10 @@ const stars = [
 	}
 
 	.project__tools {
-		margin-top: clamp(1rem, 4vw, 4rem);
+		display: grid;
+		gap: 0.8rem;
+		margin-top: clamp(3rem, 6vw, 5rem);
+		padding-left: 0.4rem;
 	}
 
 	.project__tools ul {
@@ -430,7 +408,6 @@ const stars = [
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.project :global(.project__star),
 		.process:not([hidden]),
 		.result:not([hidden]),
 		.inspiration:not([hidden]),

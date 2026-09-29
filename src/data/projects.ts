@@ -100,6 +100,10 @@ export const projects: Project[] = [
 		previewAlt: 'Mug and hexagon soap bar: Second life espresso scrub, support us on Kickstarter',
 		video: kickstarterVideo,
 		assignment: 'Pick a Kickstarter project and make a promoting video for it.',
+		idea: [
+			'The word “game” always makes me happy. I love giving users something interactive to do with my digital work, whether it’s small interactions on a website or full-on conversations with Napoleon Bonaparte in a Figma prototype, as long as there’s an experience to be had.',
+			'For this project, I created a cat-themed click game called CatVolution, where cats evolve based on your clicks and merges. I also added upgrades and a “golden poop” bonus for extra clicks. Feel free to play CatVolution if you’re ever bored!',
+		],
 		tools: ['after-effects', 'photoshop'],
 		process: [
 			{ title: 'Storyboard', images: series('storyboard', 4, 'png', 'Storyboard page') },
