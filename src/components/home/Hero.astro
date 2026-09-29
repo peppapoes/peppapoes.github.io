@@ -2,14 +2,16 @@
 import SelectionTag from '../SelectionTag.astro';
 import Star from '../Star.astro';
 import ProjectPreview from './ProjectPreview.astro';
+import IntroCard from './IntroCard.astro';
 import Starfield from '../Starfield.astro';
 import { featuredProject, projectUrl, type Category } from '../../data/projects';
 
 // Positions are percentages of the hero area, taken from the Figma design.
 // `depth` sets how far an element drifts with the mouse: higher feels closer.
-const tags: { label: string; x: number; y: number; depth: number; category?: Category }[] = [
+// A tag opens either its category's project preview or, for `intro`, the pink intro card.
+const tags: { label: string; x: number; y: number; depth: number; category?: Category; intro?: boolean }[] = [
 	{ label: 'Visual Design', x: 19, y: 22, depth: 14, category: 'visual-design' },
-	{ label: 'My portfolio', x: 71.5, y: 20, depth: 10 },
+	{ label: 'My portfolio', x: 71.5, y: 20, depth: 10, intro: true },
 	{ label: 'Integration of all courses', x: 47, y: 50, depth: 18, category: 'integration' },
 	{ label: 'Motion Design', x: 76.5, y: 67, depth: 12, category: 'motion-design' },
 	{ label: 'Coding & Development', x: 9, y: 75, depth: 16, category: 'coding' },
@@ -33,22 +35,28 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 
 	<Starfield count={170} seed={3} parallax />
 
-	{tags.map(({ label, x, y, depth, category }, i) => {
+	{tags.map(({ label, x, y, depth, category, intro }, i) => {
 		const project = category && featuredProject(category);
+		const panelClass = ['float__panel', { 'float__panel--end': x > 60 }];
 		return (
 			<div
 				class:list={['float', { 'float--end': x > 40 }]}
 				style={floatStyle(x, y, depth, i)}
-				data-item={project ? '' : undefined}
+				data-item={project || intro ? '' : undefined}
 			>
 				<div class="float__inner">
 					{project ? (
 						<>
 							<SelectionTag href={projectUrl(project)}>{label}</SelectionTag>
-							<div
-								class:list={['float__panel', { 'float__panel--end': x > 60 }]}
-							>
+							<div class:list={panelClass}>
 								<ProjectPreview id={`preview-${category}`} heading={label} project={project} />
+							</div>
+						</>
+					) : intro ? (
+						<>
+							<SelectionTag accent tabindex="0">{label}</SelectionTag>
+							<div class:list={panelClass}>
+								<IntroCard heading={label} />
 							</div>
 						</>
 					) : (
@@ -107,7 +115,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		// The card replaces its tag at exactly the tag's size, then its frame grows to
 		// full size and the content fades in (data-expanded). Closing runs backwards.
 		const open = (item: HTMLElement) => {
-			const card = item.querySelector<HTMLElement>('.preview');
+			const card = item.querySelector<HTMLElement>('[data-card]');
 			const tag = item.querySelector<HTMLElement>('.tag');
 			if (!card || !tag) return;
 			clearTimeout(closing.get(item));
@@ -133,7 +141,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		};
 
 		const close = (item: HTMLElement) => {
-			const card = item.querySelector<HTMLElement>('.preview');
+			const card = item.querySelector<HTMLElement>('[data-card]');
 			const tag = item.querySelector<HTMLElement>('.tag');
 			if (!card || !tag || !item.hasAttribute('data-expanded')) return;
 

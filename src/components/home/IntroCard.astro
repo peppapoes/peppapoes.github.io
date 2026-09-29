@@ -1,0 +1,71 @@
+---
+/**
+ * Pink intro card that opens out of the "My portfolio" tag in the hero, the same
+ * way ProjectPreview opens out of the other tags (see the hero's open()).
+ */
+import SelectionFrame from '../SelectionFrame.astro';
+
+interface Props {
+	heading: string;
+}
+
+const { heading } = Astro.props;
+---
+
+<SelectionFrame accent class="intro" data-card>
+	<span class="intro__heading">{heading}</span>
+	<p class="intro__body">
+		Hi, my name is Femke De Latter, 23 years old and Devine student by heart. Welcome to my portfolio where I
+		showcase all my projects I’m proud of. Hopefully you feel inspired by my work and don’t hesitate to contact me!
+	</p>
+</SelectionFrame>
+
+<style>
+	/* Same font size, padding and handles as the tag, so the heading stays put. */
+	.intro {
+		--handle: 0.6em;
+		display: grid;
+		align-content: start;
+		gap: 1.1rem;
+		width: min(24rem, 85vw);
+		padding: 0.35em 0.5em 1.75rem;
+		background: var(--color-bg);
+		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
+		transition:
+			width 0.5s cubic-bezier(0.65, 0, 0.35, 1),
+			height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	/* The tag sits on the right, so the card opens to the left and the heading
+	   stays right-aligned where the tag's label was. */
+	.intro__heading {
+		justify-self: end;
+		font-weight: 700;
+		letter-spacing: -0.05em;
+		white-space: nowrap;
+	}
+
+	.intro__body {
+		margin: 0;
+		padding-inline: 1.1em 0.6em;
+		font-family: var(--font-hand);
+		font-size: clamp(1rem, 1.3vw, 1.2rem);
+		line-height: 1.35;
+		letter-spacing: 0.02em;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	:global([data-expanded]) .intro__body {
+		opacity: 1;
+		transition: opacity 0.35s ease 0.3s;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.intro,
+		.intro__body,
+		:global([data-expanded]) .intro__body {
+			transition: none;
+		}
+	}
+</style>

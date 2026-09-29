@@ -22,6 +22,7 @@ const { id, heading, project } = Astro.props;
 	as="a"
 	id={id}
 	class="preview"
+	data-card
 	href={projectUrl(project)}
 	aria-label={`${heading}: view ${project.title}`}
 >
