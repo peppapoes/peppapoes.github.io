@@ -48,7 +48,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 							<div
 								class:list={['float__panel', { 'float__panel--up': y >= 50, 'float__panel--left': x > 45 }]}
 							>
-								<ProjectPreview id={`preview-${category}`} project={project} />
+								<ProjectPreview id={`preview-${category}`} heading={label} project={project} />
 							</div>
 						</>
 					) : (
