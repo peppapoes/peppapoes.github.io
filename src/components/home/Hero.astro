@@ -9,25 +9,30 @@ import { featuredProject, projectUrl, type Category } from '../../data/projects'
 // Positions are percentages of the hero area, taken from the Figma design.
 // `depth` sets how far an element drifts with the mouse: higher feels closer.
 // A tag opens either its category's project preview or, for `intro`, the pink intro card.
-const tags: { label: string; x: number; y: number; depth: number; category?: Category; intro?: boolean }[] = [
-	{ label: 'Visual Design', x: 19, y: 22, depth: 14, category: 'visual-design' },
-	{ label: 'My portfolio', x: 71.5, y: 20, depth: 10, intro: true },
-	{ label: 'Integration of all courses', x: 47, y: 50, depth: 18, category: 'integration' },
-	{ label: 'Motion Design', x: 76.5, y: 67, depth: 12, category: 'motion-design' },
-	{ label: 'Coding & Development', x: 9, y: 75, depth: 16, category: 'coding' },
+// On phones the tags stack in a zigzag instead (`phone`): the order, how far in
+// from the left (% of the width) and the space above each one, from the mobile design.
+type Phone = { order: number; x: number; gap: number };
+const tags: { label: string; x: number; y: number; depth: number; phone: Phone; category?: Category; intro?: boolean }[] = [
+	{ label: 'Visual Design', x: 19, y: 22, depth: 14, phone: { order: 1, x: 15, gap: 0 }, category: 'visual-design' },
+	{ label: 'My portfolio', x: 71.5, y: 20, depth: 10, phone: { order: 2, x: 63, gap: 1.5 }, intro: true },
+	{ label: 'Integration of all courses', x: 47, y: 50, depth: 18, phone: { order: 5, x: 38, gap: 5.5 }, category: 'integration' },
+	{ label: 'Motion Design', x: 76.5, y: 67, depth: 12, phone: { order: 3, x: 37, gap: 2.5 }, category: 'motion-design' },
+	{ label: 'Coding & Development', x: 9, y: 75, depth: 16, phone: { order: 4, x: 10, gap: 5.3 }, category: 'coding' },
 ];
 
+// On phones the stars get their own spot (`phone`: % from the left, rem from the top).
 const stars = [
-	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline', depth: 30 },
-	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled', depth: 40 },
-	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled', depth: 24 },
-	{ x: 5, y: 57, size: '2.4vw', variant: 'outline-alt', depth: 34 },
-	{ x: 62, y: 85, size: '2.4vw', variant: 'outline', depth: 28 },
+	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline', depth: 30, phone: { x: 91, y: 3.8 } },
+	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled', depth: 40, phone: { x: 27, y: 10.1 } },
+	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled', depth: 24, phone: { x: 82, y: 21.6 } },
+	{ x: 5, y: 57, size: '2.4vw', variant: 'outline-alt', depth: 34, phone: { x: 11, y: 26.6 } },
+	{ x: 62, y: 85, size: '2.4vw', variant: 'outline', depth: 28, phone: { x: 52, y: 36.3 } },
 ] as const;
 
 /** Inline custom properties for one floating element; `i` staggers the bobbing. */
 const floatStyle = (x: number, y: number, depth: number, i: number) =>
 	`left: ${x}%; top: ${y}%; --depth: ${depth}; --bob-duration: ${5 + (i % 3)}s; --bob-delay: -${i * 1.3}s`;
+const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x: ${x}%; --p-gap: ${gap}rem`;
 ---
 
 <section class="hero" aria-label="Intro" data-hero>
@@ -35,13 +40,13 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 
 	<Starfield count={170} seed={3} parallax />
 
-	{tags.map(({ label, x, y, depth, category, intro }, i) => {
+	{tags.map(({ label, x, y, depth, phone, category, intro }, i) => {
 		const project = category && featuredProject(category);
 		const panelClass = ['float__panel', { 'float__panel--end': x > 60 }];
 		return (
 			<div
 				class:list={['float', { 'float--end': x > 40 }]}
-				style={floatStyle(x, y, depth, i)}
+				style={`${floatStyle(x, y, depth, i)}; ${phoneTagStyle(phone)}`}
 				data-item={project || intro ? '' : undefined}
 			>
 				<div class="float__inner">
@@ -67,8 +72,8 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		);
 	})}
 
-	{stars.map(({ x, y, size, variant, depth }, i) => (
-		<div class="float float--star" style={floatStyle(x, y, depth, i + tags.length)}>
+	{stars.map(({ x, y, size, variant, depth, phone }, i) => (
+		<div class="float float--star" style={`${floatStyle(x, y, depth, i + tags.length)}; --p-x: ${phone.x}%; --p-y: ${phone.y}rem`}>
 			<div class="float__inner">
 				<Star variant={variant} size={`max(${size}, 1rem)`} />
 			</div>
@@ -98,6 +103,10 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			});
 		}
 
+		// Phones have no hover: tapping a tag opens its card below it (pushing the rest
+		// down), tapping it again closes it, and the card itself links to the project.
+		const phone = matchMedia('(max-width: 640px)');
+
 		const SCREEN_MARGIN = 24; // keep this much room below an opened card
 		const HEADER_SPACE = 96; // and never lift a tag behind the header
 		const CLOSE_DURATION = reducedMotion ? 0 : 500; // matches the card's size transition
@@ -118,6 +127,12 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			const card = item.querySelector<HTMLElement>('[data-card]');
 			const tag = item.querySelector<HTMLElement>('.tag');
 			if (!card || !tag) return;
+			if (phone.matches) {
+				card.style.width = card.style.height = '';
+				item.setAttribute('data-open', '');
+				item.setAttribute('data-expanded', '');
+				return;
+			}
 			clearTimeout(closing.get(item));
 
 			const from = item.hasAttribute('data-open')
@@ -144,6 +159,11 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			const card = item.querySelector<HTMLElement>('[data-card]');
 			const tag = item.querySelector<HTMLElement>('.tag');
 			if (!card || !tag || !item.hasAttribute('data-expanded')) return;
+			if (phone.matches) {
+				item.removeAttribute('data-open');
+				item.removeAttribute('data-expanded');
+				return;
+			}
 
 			item.removeAttribute('data-expanded');
 			card.style.width = `${tag.offsetWidth}px`;
@@ -172,9 +192,15 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 				// A short delay gives the mouse time to cross the gap into the preview.
 				closeTimer = window.setTimeout(() => close(item), 300);
 			});
-			item.addEventListener('focusin', () => show(item));
+			item.addEventListener('focusin', () => !phone.matches && show(item));
 			item.addEventListener('focusout', (e) => {
-				if (!item.contains(e.relatedTarget as Node)) close(item);
+				if (!phone.matches && !item.contains(e.relatedTarget as Node)) close(item);
+			});
+			item.querySelector('.tag')?.addEventListener('click', (e) => {
+				if (!phone.matches) return; // desktop: the tag links straight to the project
+				e.preventDefault();
+				if (item.hasAttribute('data-open')) close(item);
+				else show(item);
 			});
 		}
 
@@ -269,26 +295,67 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 	}
 
 	/* Without a mouse there's no hover: tapping a tag just opens the project. */
-	@media (hover: none) {
+	/* Tablets without hover: tapping a tag simply opens the project. */
+	@media (hover: none) and (min-width: 641px) {
 		.float__panel {
 			display: none;
 		}
 	}
 
+	/* Phones: the tags stack in a zigzag and a tapped tag's card opens right below it. */
 	@media (max-width: 640px) {
 		.hero {
-			height: 30rem;
-		}
-
-		/* Anchor right-side tags to the edge so they stay on screen. */
-		.float--end {
-			left: auto !important;
-			right: var(--gutter);
+			display: flex;
+			flex-direction: column;
+			height: auto;
+			margin-top: 0;
+			padding: 4rem 0 7rem;
 		}
 
 		.float {
 			translate: none;
 			transition: none;
+		}
+
+		.float:not(.float--star) {
+			position: relative;
+			left: 0 !important;
+			top: 0 !important;
+			order: var(--p-order);
+			margin-top: var(--p-gap);
+		}
+
+		.float--star {
+			left: var(--p-x) !important;
+			top: var(--p-y) !important;
+		}
+
+		.float:not(.float--star) :global(.tag) {
+			margin-left: var(--p-x);
+		}
+
+		.float__inner {
+			translate: none;
+		}
+
+		.float__panel,
+		.float__panel--end {
+			position: static;
+			display: none;
+			margin: 1rem var(--gutter) 0;
+		}
+
+		.float[data-open] .float__panel {
+			display: block;
+			animation: card-in 0.35s ease;
+		}
+
+		.float[data-open] :global(.tag) {
+			opacity: 1;
+		}
+
+		@keyframes card-in {
+			from { opacity: 0; translate: 0 -0.5rem; }
 		}
 	}
 </style>

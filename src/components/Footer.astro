@@ -6,7 +6,7 @@ const email = 'fdelatter@gmail.com';
 ---
 
 <footer id="contact" class="footer">
-	<FooterStar class="footer__splash" aria-hidden="true" />
+	<FooterStar class="footer__splash" aria-hidden="true" preserveAspectRatio="none" />
 
 	<p class="footer__logo" aria-hidden="true">FDSGNS</p>
 
@@ -70,25 +70,32 @@ const email = 'fdelatter@gmail.com';
 		color: var(--color-bg);
 	}
 
+	/* Phones: logo and socials on one line; the contact line lives on the Contact page. */
 	@media (max-width: 640px) {
 		.footer {
-			flex-direction: column-reverse;
-			align-items: stretch;
-			padding-top: 3rem;
+			align-items: flex-end;
+			gap: 1rem;
+			min-height: 9rem;
+			padding-bottom: 1rem;
 		}
 
+		/* Narrower and taller than on desktop, so the logo starts on black. */
 		.footer__splash {
-			width: 160%;
+			width: 68%;
+			height: 8.5rem;
 		}
 
 		.footer__logo {
-			font-size: 22vw;
+			margin-bottom: 0;
+			font-size: 14vw;
 		}
 
 		.footer__contact {
-			align-items: flex-start;
-			text-align: left;
-			padding-bottom: 0;
+			padding: 0 var(--gutter) 0 0;
+		}
+
+		.footer__contact p {
+			display: none;
 		}
 	}
 </style>

@@ -1,11 +1,16 @@
 ---
 import Star from './Star.astro';
+import SocialLinks from './SocialLinks.astro';
+import FooterStar from '../assets/images/footer_star.svg';
 
 const links = [
 	{ label: 'About Me', href: '/about' },
 	{ label: 'My Work', href: '/work' },
 	{ label: 'Contact', href: '/contact' },
 ];
+
+const current = Astro.url.pathname.replace(/\/$/, '');
+const isCurrent = (href: string) => current === href || current.startsWith(`${href}/`);
 ---
 
 <header class="header">
@@ -17,11 +22,51 @@ const links = [
 	<nav aria-label="Main">
 		<ul class="nav">
 			{links.map(({ label, href }) => (
-				<li><a href={href} aria-current={Astro.url.pathname.replace(/\/$/, '') === href ? 'page' : undefined}>{label}</a></li>
+				<li><a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>{label}</a></li>
 			))}
 		</ul>
 	</nav>
+
+	<button class="burger" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-controls="menu" data-menu-open>
+		<span></span>
+		<span></span>
+		<span></span>
+	</button>
 </header>
+
+<!-- Full-screen menu on phones. -->
+<dialog class="menu" id="menu" aria-label="Menu">
+	<div class="menu__top">
+		<a href="/" class="logo" aria-label="FDSGNS — home">
+			FDSGNS
+			<Star variant="outline-alt" size="1.5em" class="logo__star" />
+		</a>
+		<button class="menu__close" type="button" aria-label="Close menu" data-menu-close></button>
+	</div>
+
+	<nav aria-label="Main">
+		<ul class="menu__links">
+			{links.map(({ label, href }) => (
+				<li><a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>{label.toLowerCase()}</a></li>
+			))}
+		</ul>
+	</nav>
+
+	<div class="menu__footer">
+		<FooterStar class="menu__splash" aria-hidden="true" preserveAspectRatio="none" />
+		<span class="menu__logo" aria-hidden="true">FDSGNS</span>
+		<SocialLinks />
+	</div>
+</dialog>
+
+<script>
+	const menu = document.querySelector<HTMLDialogElement>('#menu')!;
+	document.querySelector('[data-menu-open]')?.addEventListener('click', () => menu.showModal());
+	document.querySelector('[data-menu-close]')?.addEventListener('click', () => menu.close());
+	menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => menu.close()));
+	// The menu is phone-only; close it if the screen grows past that.
+	matchMedia('(min-width: 641px)').addEventListener('change', (e) => e.matches && menu.close());
+</script>
 
 <style>
 	.header {
@@ -65,5 +110,154 @@ const links = [
 	.nav a:hover,
 	.nav a[aria-current='page'] {
 		color: var(--color-accent);
+	}
+
+	/* Phone menu */
+	.burger {
+		display: none;
+		flex-direction: column;
+		gap: 0.45rem;
+		padding: 0.25rem;
+		border: 0;
+		background: none;
+		cursor: pointer;
+	}
+
+	.burger span {
+		width: 2.4rem;
+		height: 0.4rem;
+		background: var(--color-accent);
+	}
+
+	.menu {
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		border: 0;
+		background: var(--color-bg);
+		color: var(--color-fg);
+	}
+
+	.menu[open] {
+		display: flex;
+		flex-direction: column;
+		animation: menu-in 0.35s ease;
+	}
+
+	.menu::backdrop {
+		background: var(--color-bg);
+	}
+
+	@keyframes menu-in {
+		from { opacity: 0; }
+	}
+
+	.menu__top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1.25rem var(--gutter);
+	}
+
+	.menu__close {
+		position: relative;
+		width: 2.4rem;
+		height: 2.4rem;
+		border: 0;
+		background: none;
+		cursor: pointer;
+	}
+
+	.menu__close::before,
+	.menu__close::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 0;
+		width: 100%;
+		height: 0.4rem;
+		background: var(--color-accent);
+		translate: 0 -50%;
+		rotate: 45deg;
+	}
+
+	.menu__close::after {
+		rotate: -45deg;
+	}
+
+	.menu__links {
+		margin: 4rem calc(var(--gutter) + 1rem) 0;
+		padding: 0;
+		list-style: none;
+		border-top: 1.5px solid var(--color-fg);
+	}
+
+	.menu__links li {
+		border-bottom: 1.5px solid var(--color-fg);
+	}
+
+	.menu__links a {
+		display: block;
+		padding: 1.4rem 0;
+		font-size: clamp(2.75rem, 15vw, 4.5rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.06em;
+		text-align: center;
+		text-decoration: none;
+	}
+
+	.menu__links a[aria-current='page'] {
+		color: var(--color-accent);
+	}
+
+	.menu__footer {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-top: auto;
+		padding: 0 var(--gutter) 1rem;
+	}
+
+	.menu__footer :global(.menu__splash) {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		width: 68%;
+		height: 8.5rem;
+	}
+
+	.menu__logo {
+		position: relative;
+		font-size: 13vw;
+		font-weight: 700;
+		line-height: 0.8;
+		letter-spacing: -0.02em;
+	}
+
+	.menu__footer :global(.socials) {
+		position: relative;
+	}
+
+	@media (max-width: 640px) {
+		.header nav {
+			display: none;
+		}
+
+		.burger {
+			display: flex;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.menu[open] {
+			animation: none;
+		}
 	}
 </style>

@@ -142,4 +142,11 @@ const { id, heading, project } = Astro.props;
 	.preview:focus-visible .preview__arrow {
 		translate: 0.5rem 0;
 	}
+
+	/* On phones the tag stays above the card, so the heading would be doubled. */
+	@media (max-width: 640px) {
+		.preview__heading {
+			display: none;
+		}
+	}
 </style>

@@ -8,16 +8,37 @@ const rows: { words: Word[]; offset: string }[] = [
 	{ words: [{ text: 'sketch' }, { text: 'innovative' }, { text: 'ux' }, { text: 'young' }], offset: '-2vw' },
 	{ words: [{ text: 'artistic' }, { text: 'creativity' }], offset: '0vw' },
 ];
+
+// Phones get their own arrangement: rows start at `start` and run off the right edge.
+const mobileRows: { words: Word[]; start: string }[] = [
+	{ words: [{ text: 'who am i', style: 'accent' }, { text: 'design' }], start: '17vw' },
+	{ words: [{ text: 'ux' }, { text: 'inspired' }, { text: 'femke', style: 'outline' }, { text: 'eager' }], start: '-1vw' },
+	{ words: [{ text: 'visual' }, { text: 'creativity' }, { text: 'artistic' }], start: '-3vw' },
+	{ words: [{ text: 'eager' }, { text: 'young' }, { text: 'innovative' }], start: '-14vw' },
+	{ words: [{ text: 'coding' }, { text: 'sketch' }], start: '-2vw' },
+];
 ---
 
 <section id="about" class="cloud" aria-label="Who am I">
-	{rows.map(({ words, offset }, i) => (
-		<p class:list={['cloud__row', { 'cloud__row--spread': i === rows.length - 1 }]} style={`--offset: ${offset}`}>
-			{words.map(({ text, style }) => (
-				<span class:list={['cloud__word', style && `cloud__word--${style}`]}>{text}</span>
-			))}
-		</p>
-	))}
+	<div class="cloud__set cloud__set--wide">
+		{rows.map(({ words, offset }, i) => (
+			<p class:list={['cloud__row', { 'cloud__row--spread': i === rows.length - 1 }]} style={`--offset: ${offset}`}>
+				{words.map(({ text, style }) => (
+					<span class:list={['cloud__word', style && `cloud__word--${style}`]}>{text}</span>
+				))}
+			</p>
+		))}
+	</div>
+
+	<div class="cloud__set cloud__set--phone">
+		{mobileRows.map(({ words, start }, i) => (
+			<p class:list={['cloud__row', 'cloud__row--phone', { 'cloud__row--spread': i === mobileRows.length - 1 }]} style={`--start: ${start}`}>
+				{words.map(({ text, style }) => (
+					<span class:list={['cloud__word', style && `cloud__word--${style}`]}>{text}</span>
+				))}
+			</p>
+		))}
+	</div>
 </section>
 
 <style>
@@ -53,9 +74,33 @@ const rows: { words: Word[]; offset: string }[] = [
 		-webkit-text-stroke: 0.012em var(--color-fg);
 	}
 
+	.cloud__set--phone {
+		display: none;
+	}
+
 	@media (max-width: 640px) {
-		.cloud__row {
-			font-size: 12vw;
+		.cloud__set--wide {
+			display: none;
+		}
+
+		.cloud__set--phone {
+			display: block;
+		}
+
+		.cloud__row--phone {
+			justify-content: flex-start;
+			gap: 0.3em;
+			padding-left: var(--start);
+			translate: none;
+			font-size: 11.5vw;
+			line-height: 1;
+		}
+
+		.cloud__row--phone.cloud__row--spread {
+			gap: 0;
+			justify-content: space-between;
+			padding-right: 0;
+			margin-right: -3vw;
 		}
 	}
 

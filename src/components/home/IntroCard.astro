@@ -68,4 +68,11 @@ const { heading } = Astro.props;
 			transition: none;
 		}
 	}
+
+	/* On phones the tag stays above the card, so the heading would be doubled. */
+	@media (max-width: 640px) {
+		.intro__heading {
+			display: none;
+		}
+	}
 </style>
