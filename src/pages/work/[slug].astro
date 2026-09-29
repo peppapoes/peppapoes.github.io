@@ -6,7 +6,6 @@ import Layout from '../../layouts/Layout.astro';
 import SelectionFrame from '../../components/SelectionFrame.astro';
 import Star from '../../components/Star.astro';
 import ToolIcon from '../../components/work/ToolIcon.astro';
-import FoldSection from '../../components/work/FoldSection.astro';
 import ImageStrip from '../../components/work/ImageStrip.astro';
 import { categoryLabels, projects, type Project } from '../../data/projects';
 
@@ -24,8 +23,22 @@ const images = project.gallery?.length
 	: project.preview
 		? [{ src: project.preview, alt: project.previewAlt ?? '' }]
 		: [];
-const hasSections = Boolean(project.process?.length || project.video);
 const hasText = Boolean(project.assignment || project.idea?.length || project.tools?.length);
+
+// Every project page has the same three tabs; topics without content yet say so.
+const tabs = [
+	{ id: 'overview', label: 'Overview' },
+	{ id: 'process', label: 'Process' },
+	{ id: 'end-result', label: 'End result' },
+];
+// Panel ids differ from the URL hash (#process), so opening a tab from a link doesn't scroll the page.
+const panelAttrs = (id: string) => ({
+	id: `panel-${id}`,
+	role: 'tabpanel',
+	'aria-labelledby': `tab-${id}`,
+	tabindex: '0',
+	hidden: id !== 'overview',
+});
 
 const stars = [
 	{ x: 47.5, y: 'top: 8rem', size: '1.4vw', variant: 'outline' },
@@ -45,7 +58,7 @@ const stars = [
 		</ol>
 	</nav>
 
-	<article class:list={['project', { 'project--with-sections': hasSections }]}>
+	<article class="project">
 		{stars.map(({ x, y, size, variant }, i) => (
 			<Star
 				class="project__star"
@@ -55,12 +68,29 @@ const stars = [
 			/>
 		))}
 
-		<div class="project__main">
-			<header class="project__heading">
-				<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
-				<h1 class="project__title">{project.title}</h1>
-			</header>
+		<header class="project__heading">
+			<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
+			<h1 class="project__title">{project.title}</h1>
+		</header>
 
+		<div class="tabs" role="tablist" aria-label={`${project.title} topics`}>
+				{tabs.map(({ id, label }, i) => (
+					<button
+						class="tabs__tab"
+						id={`tab-${id}`}
+						type="button"
+						role="tab"
+						aria-controls={`panel-${id}`}
+						data-topic={id}
+						aria-selected={i === 0 ? 'true' : 'false'}
+						tabindex={i === 0 ? 0 : -1}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
+		<section class="overview" {...panelAttrs('overview')}>
 			{images.length > 0 && (
 				<SelectionFrame class="project__media">
 					{images.map(({ src, alt }) => (
@@ -68,53 +98,50 @@ const stars = [
 					))}
 				</SelectionFrame>
 			)}
-		</div>
 
-		<div class="project__info">
-			{project.assignment && (
-				<section>
-					<h2 class="project__label">Assignment</h2>
-					<p>{project.assignment}</p>
-				</section>
-			)}
+			<div class="project__info">
+				{project.assignment && (
+					<section>
+						<h2 class="project__label">Assignment</h2>
+						<p>{project.assignment}</p>
+					</section>
+				)}
 
-			{project.idea?.length ? (
-				<section>
-					<h2 class="project__label">Idea</h2>
-					{project.idea.map((paragraph) => <p>{paragraph}</p>)}
-				</section>
-			) : null}
+				{project.idea?.length ? (
+					<section>
+						<h2 class="project__label">Idea</h2>
+						{project.idea.map((paragraph) => <p>{paragraph}</p>)}
+					</section>
+				) : null}
 
-			{project.tools?.length ? (
-				<section class="project__tools">
-					<h2 class="project__label">Used tools</h2>
-					<ul>
-						{project.tools.map((tool) => <ToolIcon tool={tool} />)}
-					</ul>
-				</section>
-			) : null}
+				{project.tools?.length ? (
+					<section class="project__tools">
+						<h2 class="project__label">Used tools</h2>
+						<ul>
+							{project.tools.map((tool) => <ToolIcon tool={tool} />)}
+						</ul>
+					</section>
+				) : null}
 
-			{!hasText && <p class="project__soon">more about this project coming soon!</p>}
-		</div>
-	</article>
+				{!hasText && <p class="project__soon">more about this project coming soon!</p>}
+			</div>
+		</section>
 
-	{hasSections && (
-		<div class="sections">
-			{project.process?.length ? (
-				<FoldSection title="Process">
-					{project.process.map(({ title, text, images }) => (
+		<section class="process" {...panelAttrs('process')}>
+			{project.process?.length
+				? project.process.map(({ title, text, images }) => (
 						<section class="step">
-							<h3 class="step__title">{title}</h3>
+							<h2 class="step__title">{title}</h2>
 							{text && <p class="step__text">{text}</p>}
 							<ImageStrip images={images} label={`${title} images`} />
 						</section>
-					))}
-				</FoldSection>
-			) : null}
+					))
+				: <p class="project__soon">more coming soon!</p>}
+		</section>
 
-			{project.video && (
-				<FoldSection title="End result">
-					<video
+		<section class="result" {...panelAttrs('end-result')}>
+			{project.video
+				? <video
 						class="result__video"
 						src={`${project.video}#t=0.1`}
 						controls
@@ -122,11 +149,41 @@ const stars = [
 						preload="metadata"
 						aria-label={`${project.title} video`}
 					/>
-				</FoldSection>
-			)}
-		</div>
-	)}
+				: <p class="project__soon">more coming soon!</p>}
+		</section>
+	</article>
 </Layout>
+
+<script>
+	const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tabs [role="tab"]')];
+
+	const select = (tab: HTMLButtonElement, focus = false) => {
+		for (const other of tabs) {
+			const selected = other === tab;
+			other.setAttribute('aria-selected', String(selected));
+			other.tabIndex = selected ? 0 : -1;
+			const panel = document.getElementById(other.getAttribute('aria-controls')!)!;
+			panel.hidden = !selected;
+			if (!selected) panel.querySelectorAll('video').forEach((video) => video.pause());
+		}
+		if (focus) tab.focus();
+
+		// Keep the tab in the URL (e.g. /work/kickstarter#process) so it can be shared.
+		const topic = tab.dataset.topic;
+		history.replaceState(null, '', topic === 'overview' ? location.pathname + location.search : `#${topic}`);
+	};
+
+	tabs.forEach((tab, i) => {
+		tab.addEventListener('click', () => select(tab));
+		tab.addEventListener('keydown', (e) => {
+			const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+			if (step) select(tabs[(i + step + tabs.length) % tabs.length], true);
+		});
+	});
+
+	const fromUrl = tabs.find((tab) => `#${tab.dataset.topic}` === location.hash);
+	if (fromUrl) select(fromUrl);
+</script>
 
 <style>
 	.crumbs ol {
@@ -165,10 +222,6 @@ const stars = [
 
 	.project {
 		position: relative;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		column-gap: clamp(2rem, 6vw, 7rem);
-		align-items: start;
 		margin: 0 var(--gutter);
 		padding: clamp(1.5rem, 2.5vw, 2.5rem) 0 clamp(8rem, 16vw, 14rem);
 		border-top: 1.5px solid var(--color-fg);
@@ -185,8 +238,61 @@ const stars = [
 	}
 
 	.project__heading {
-		margin-bottom: clamp(2rem, 4vw, 3.5rem);
+		margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
 		padding-left: 0.4rem;
+	}
+
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem clamp(1.25rem, 3vw, 3rem);
+		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+		padding: 0 0.4rem 1rem;
+		border-bottom: 1.5px solid var(--color-fg);
+	}
+
+	.tabs__tab {
+		padding: 0.25em 0;
+		border: 0;
+		background: none;
+		color: var(--color-fg);
+		font: inherit;
+		font-size: clamp(1rem, 1.5vw, 1.4rem);
+		letter-spacing: -0.04em;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.tabs__tab:hover,
+	.tabs__tab[aria-selected='true'] {
+		color: var(--color-accent);
+	}
+
+	.tabs__tab:focus-visible,
+	[role='tabpanel']:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 4px;
+	}
+
+	[role='tabpanel']:not([hidden]) {
+		animation: fade-in 0.4s ease;
+	}
+
+	@keyframes fade-in {
+		from { opacity: 0; translate: 0 0.5rem; }
+	}
+
+	.overview {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		column-gap: clamp(2rem, 6vw, 7rem);
+		align-items: start;
+	}
+
+	.overview[hidden],
+	.process[hidden],
+	.result[hidden] {
+		display: none;
 	}
 
 	.project__category {
@@ -207,7 +313,7 @@ const stars = [
 		--handle: 1.1rem;
 		display: grid;
 		gap: 0.6rem;
-		max-width: 44rem;
+		max-width: min(44rem, calc((100svh - 18rem) * 1.48));
 		padding: 0.9rem;
 	}
 
@@ -217,14 +323,6 @@ const stars = [
 		height: auto;
 	}
 
-
-	.project--with-sections {
-		padding-bottom: clamp(3rem, 6vw, 5rem);
-	}
-
-	.sections {
-		margin: 0 var(--gutter) clamp(8rem, 14vw, 12rem);
-	}
 
 	.step + .step {
 		margin-top: clamp(2rem, 3.5vw, 3rem);
@@ -248,10 +346,10 @@ const stars = [
 		letter-spacing: -0.02em;
 	}
 
+	/* Never taller than the screen, so the page below stays in view. */
 	.result__video {
 		display: block;
-		width: 100%;
-		max-width: 64rem;
+		width: min(100%, 64rem, calc((100svh - 22rem) * 16 / 9));
 		aspect-ratio: 16 / 9;
 		background: #111;
 	}
@@ -299,20 +397,27 @@ const stars = [
 		list-style: none;
 	}
 
-	.project__info .project__soon {
+	.project__soon {
+		margin: 0;
+		padding-left: 0.4rem;
+	}
+
+	.project__info .project__soon,
+	.project__soon {
 		font-family: var(--font-hand);
 		font-size: clamp(1.2rem, 2vw, 1.6rem);
 		font-weight: 400;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.project :global(.project__star) {
+		.project :global(.project__star),
+		[role='tabpanel']:not([hidden]) {
 			animation: none;
 		}
 	}
 
 	@media (max-width: 800px) {
-		.project {
+		.overview {
 			grid-template-columns: minmax(0, 1fr);
 			row-gap: 2.5rem;
 		}
