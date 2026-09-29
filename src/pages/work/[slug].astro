@@ -25,20 +25,14 @@ const images = project.gallery?.length
 		: [];
 const hasText = Boolean(project.assignment || project.idea?.length || project.tools?.length);
 
-// Every project page has the same three tabs; topics without content yet say so.
+// Below the overview, every project page has the same tabs; each opens its topic
+// underneath (and closes it again). Topics without content yet say so.
 const tabs = [
-	{ id: 'overview', label: 'Overview' },
 	{ id: 'process', label: 'Process' },
 	{ id: 'end-result', label: 'End result' },
 ];
 // Panel ids differ from the URL hash (#process), so opening a tab from a link doesn't scroll the page.
-const panelAttrs = (id: string) => ({
-	id: `panel-${id}`,
-	role: 'tabpanel',
-	'aria-labelledby': `tab-${id}`,
-	tabindex: '0',
-	hidden: id !== 'overview',
-});
+const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab-${id}`, hidden: true });
 
 const stars = [
 	{ x: 47.5, y: 'top: 8rem', size: '1.4vw', variant: 'outline' },
@@ -68,36 +62,21 @@ const stars = [
 			/>
 		))}
 
-		<header class="project__heading">
-			<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
-			<h1 class="project__title">{project.title}</h1>
-		</header>
+		<section class="overview">
+			<div class="project__main">
+				<header class="project__heading">
+					<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
+					<h1 class="project__title">{project.title}</h1>
+				</header>
 
-		<div class="tabs" role="tablist" aria-label={`${project.title} topics`}>
-				{tabs.map(({ id, label }, i) => (
-					<button
-						class="tabs__tab"
-						id={`tab-${id}`}
-						type="button"
-						role="tab"
-						aria-controls={`panel-${id}`}
-						data-topic={id}
-						aria-selected={i === 0 ? 'true' : 'false'}
-						tabindex={i === 0 ? 0 : -1}
-					>
-						{label}
-					</button>
-				))}
+				{images.length > 0 && (
+					<SelectionFrame class="project__media">
+						{images.map(({ src, alt }) => (
+							<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
+						))}
+					</SelectionFrame>
+				)}
 			</div>
-
-		<section class="overview" {...panelAttrs('overview')}>
-			{images.length > 0 && (
-				<SelectionFrame class="project__media">
-					{images.map(({ src, alt }) => (
-						<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
-					))}
-				</SelectionFrame>
-			)}
 
 			<div class="project__info">
 				{project.assignment && (
@@ -127,6 +106,23 @@ const stars = [
 			</div>
 		</section>
 
+		<div class="tabs">
+			{tabs.map(({ id, label }) => (
+				<button
+					class="tabs__tab"
+					id={`tab-${id}`}
+					type="button"
+					aria-expanded="false"
+					aria-controls={`panel-${id}`}
+					data-topic={id}
+				>
+					{label}
+					<Star class="tabs__star tabs__star--closed" variant="outline" size="1em" />
+					<Star class="tabs__star tabs__star--open" variant="filled" size="1em" />
+				</button>
+			))}
+		</div>
+
 		<section class="process" {...panelAttrs('process')}>
 			{project.process?.length
 				? project.process.map(({ title, text, images }) => (
@@ -155,34 +151,28 @@ const stars = [
 </Layout>
 
 <script>
-	const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tabs [role="tab"]')];
+	const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tabs [data-topic]')];
 
-	const select = (tab: HTMLButtonElement, focus = false) => {
+	// Opens one topic (closing the others), or closes everything with null.
+	const show = (tab: HTMLButtonElement | null) => {
 		for (const other of tabs) {
-			const selected = other === tab;
-			other.setAttribute('aria-selected', String(selected));
-			other.tabIndex = selected ? 0 : -1;
+			const open = other === tab;
+			other.setAttribute('aria-expanded', String(open));
 			const panel = document.getElementById(other.getAttribute('aria-controls')!)!;
-			panel.hidden = !selected;
-			if (!selected) panel.querySelectorAll('video').forEach((video) => video.pause());
+			panel.hidden = !open;
+			if (!open) panel.querySelectorAll('video').forEach((video) => video.pause());
 		}
-		if (focus) tab.focus();
 
-		// Keep the tab in the URL (e.g. /work/kickstarter#process) so it can be shared.
-		const topic = tab.dataset.topic;
-		history.replaceState(null, '', topic === 'overview' ? location.pathname + location.search : `#${topic}`);
+		// Keep the open topic in the URL (e.g. /work/kickstarter#process) so it can be shared.
+		history.replaceState(null, '', tab ? `#${tab.dataset.topic}` : location.pathname + location.search);
 	};
 
-	tabs.forEach((tab, i) => {
-		tab.addEventListener('click', () => select(tab));
-		tab.addEventListener('keydown', (e) => {
-			const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-			if (step) select(tabs[(i + step + tabs.length) % tabs.length], true);
-		});
-	});
+	for (const tab of tabs) {
+		tab.addEventListener('click', () => show(tab.getAttribute('aria-expanded') === 'true' ? null : tab));
+	}
 
 	const fromUrl = tabs.find((tab) => `#${tab.dataset.topic}` === location.hash);
-	if (fromUrl) select(fromUrl);
+	if (fromUrl) show(fromUrl);
 </script>
 
 <style>
@@ -238,43 +228,67 @@ const stars = [
 	}
 
 	.project__heading {
-		margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+		margin-bottom: clamp(2rem, 4vw, 3.5rem);
 		padding-left: 0.4rem;
 	}
 
 	.tabs {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem clamp(1.25rem, 3vw, 3rem);
-		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
-		padding: 0 0.4rem 1rem;
-		border-bottom: 1.5px solid var(--color-fg);
+		gap: 0.5rem clamp(1.5rem, 3vw, 3rem);
+		margin: clamp(3rem, 7vw, 6rem) 0 clamp(2rem, 4vw, 3.5rem);
+		padding-left: 0.4rem;
 	}
 
 	.tabs__tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45em;
 		padding: 0.25em 0;
 		border: 0;
 		background: none;
 		color: var(--color-fg);
 		font: inherit;
-		font-size: clamp(1rem, 1.5vw, 1.4rem);
+		font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+		font-weight: 500;
 		letter-spacing: -0.04em;
 		cursor: pointer;
 		transition: color 0.2s ease;
 	}
 
 	.tabs__tab:hover,
-	.tabs__tab[aria-selected='true'] {
+	.tabs__tab[aria-expanded='true'] {
 		color: var(--color-accent);
 	}
 
-	.tabs__tab:focus-visible,
-	[role='tabpanel']:focus-visible {
+	.tabs__tab:focus-visible {
 		outline: 1px solid var(--color-fg);
 		outline-offset: 4px;
 	}
 
-	[role='tabpanel']:not([hidden]) {
+	/* The star is the indicator: outlined while closed, pink and filled when open. */
+	.tabs__tab :global(.tabs__star) {
+		color: currentColor;
+		transition: rotate 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.tabs__tab :global(.tabs__star--open),
+	.tabs__tab[aria-expanded='true'] :global(.tabs__star--closed) {
+		display: none;
+	}
+
+	.tabs__tab[aria-expanded='true'] :global(.tabs__star--open) {
+		display: block;
+		color: var(--color-accent);
+		rotate: 20deg;
+	}
+
+	.tabs__tab:hover :global(.tabs__star) {
+		rotate: 20deg;
+	}
+
+	.process:not([hidden]),
+	.result:not([hidden]) {
 		animation: fade-in 0.4s ease;
 	}
 
@@ -289,7 +303,6 @@ const stars = [
 		align-items: start;
 	}
 
-	.overview[hidden],
 	.process[hidden],
 	.result[hidden] {
 		display: none;
@@ -411,7 +424,8 @@ const stars = [
 
 	@media (prefers-reduced-motion: reduce) {
 		.project :global(.project__star),
-		[role='tabpanel']:not([hidden]) {
+		.process:not([hidden]),
+		.result:not([hidden]) {
 			animation: none;
 		}
 	}
