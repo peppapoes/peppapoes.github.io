@@ -90,7 +90,67 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			});
 		}
 
-		const show = (item: HTMLElement | null) => items.forEach((other) => other.toggleAttribute('data-open', other === item));
+		const SCREEN_MARGIN = 24; // keep this much room below an opened card
+		const HEADER_SPACE = 96; // and never lift a tag behind the header
+		const CLOSE_DURATION = reducedMotion ? 0 : 500; // matches the card's size transition
+		const closing = new Map<HTMLElement, number>();
+
+		// Low tags would open their card below the fold: lift the tag and card up
+		// together until the whole card is visible.
+		const lift = (item: HTMLElement, cardHeight: number) => {
+			const top = item.getBoundingClientRect().top; // .float itself isn't lifted, only its inner wrapper
+			const overflow = top + cardHeight - (innerHeight - SCREEN_MARGIN);
+			const room = top - HEADER_SPACE;
+			item.style.setProperty('--lift', `${Math.max(0, Math.min(overflow, room))}px`);
+		};
+
+		// The card replaces its tag at exactly the tag's size, then its frame grows to
+		// full size and the content fades in (data-expanded). Closing runs backwards.
+		const open = (item: HTMLElement) => {
+			const card = item.querySelector<HTMLElement>('.preview');
+			const tag = item.querySelector<HTMLElement>('.tag');
+			if (!card || !tag) return;
+			clearTimeout(closing.get(item));
+
+			const from = item.hasAttribute('data-open')
+				? { width: card.offsetWidth, height: card.offsetHeight } // reopened while closing
+				: { width: tag.offsetWidth, height: tag.offsetHeight };
+			item.setAttribute('data-open', '');
+
+			card.style.width = card.style.height = '';
+			const to = { width: card.offsetWidth, height: card.offsetHeight };
+			lift(item, to.height);
+
+			// Jump to the starting size without a transition, then grow from there.
+			card.style.transition = 'none';
+			card.style.width = `${from.width}px`;
+			card.style.height = `${from.height}px`;
+			card.getBoundingClientRect();
+			card.style.transition = '';
+			card.style.width = `${to.width}px`;
+			card.style.height = `${to.height}px`;
+			item.setAttribute('data-expanded', '');
+		};
+
+		const close = (item: HTMLElement) => {
+			const card = item.querySelector<HTMLElement>('.preview');
+			const tag = item.querySelector<HTMLElement>('.tag');
+			if (!card || !tag || !item.hasAttribute('data-expanded')) return;
+
+			item.removeAttribute('data-expanded');
+			card.style.width = `${tag.offsetWidth}px`;
+			card.style.height = `${tag.offsetHeight}px`;
+			item.style.setProperty('--lift', '0px');
+			closing.set(
+				item,
+				window.setTimeout(() => {
+					item.removeAttribute('data-open');
+					card.style.width = card.style.height = '';
+				}, CLOSE_DURATION),
+			);
+		};
+
+		const show = (item: HTMLElement | null) => items.forEach((other) => (other === item ? open(other) : close(other)));
 
 		// Hovering (or tabbing to) a tag peeks at its project; clicking the tag goes straight to it.
 		for (const item of items) {
@@ -102,11 +162,11 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 			item.addEventListener('pointerleave', (e) => {
 				if (e.pointerType !== 'mouse') return;
 				// A short delay gives the mouse time to cross the gap into the preview.
-				closeTimer = window.setTimeout(() => item.removeAttribute('data-open'), 300);
+				closeTimer = window.setTimeout(() => close(item), 300);
 			});
 			item.addEventListener('focusin', () => show(item));
 			item.addEventListener('focusout', (e) => {
-				if (!item.contains(e.relatedTarget as Node)) item.removeAttribute('data-open');
+				if (!item.contains(e.relatedTarget as Node)) close(item);
 			});
 		}
 
@@ -136,6 +196,8 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 	}
 
 	.float__inner {
+		translate: 0 calc(-1 * var(--lift, 0px));
+		transition: translate 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
 		animation: bob var(--bob-duration) var(--bob-delay) ease-in-out infinite alternate;
 	}
 
@@ -153,39 +215,25 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 		to { transform: translateY(6px) rotate(8deg); }
 	}
 
-	/* The card opens up out of its tag: it starts at the tag's corner, small, and
-	   grows to full size while the tag fades out, so the card's heading takes its place. */
+	/* The card opens out of its tag: it sits exactly on top of it and takes over
+	   (see open() above), so it only needs to appear and disappear here. */
 	.float__panel {
 		position: absolute;
 		top: 0;
 		left: 0;
-		opacity: 0;
-		scale: 0.3;
 		visibility: hidden;
 		pointer-events: none;
-		transform-origin: top left;
-		transition:
-			opacity 0.25s ease,
-			scale 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
-			visibility 0.45s;
 	}
 
 	/* Tags on the right open towards the left, so the card stays on screen. */
 	.float__panel--end {
 		left: auto;
 		right: 0;
-		transform-origin: top right;
 	}
 
 	.float[data-open] .float__panel {
-		opacity: 1;
-		scale: 1;
 		visibility: visible;
 		pointer-events: auto;
-	}
-
-	.float :global(.tag) {
-		transition: opacity 0.2s ease, scale 0.3s ease;
 	}
 
 	.float[data-open] :global(.tag) {
@@ -203,7 +251,7 @@ const floatStyle = (x: number, y: number, depth: number, i: number) =>
 
 	@media (prefers-reduced-motion: reduce) {
 		.float,
-		.float__panel {
+		.float__inner {
 			transition: none;
 		}
 

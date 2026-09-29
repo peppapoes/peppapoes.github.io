@@ -2,7 +2,8 @@
 /**
  * Card previewing one project, shown when hovering a tag in the hero: the tag's
  * label as heading, the preview image and a few handwritten lines, all in one
- * selection frame that links to the project.
+ * selection frame that links to the project. The hero animates the frame's size;
+ * the body fades in once it's open (`data-expanded` on the hero item).
  */
 import { Image } from 'astro:assets';
 import SelectionFrame from '../SelectionFrame.astro';
@@ -26,6 +27,7 @@ const { id, heading, project } = Astro.props;
 >
 	<span class="preview__heading">{heading}</span>
 
+	<span class="preview__body">
 	{project.preview && (
 		<Image class="preview__image" src={project.preview} alt="" widths={[400, 600, 800]} sizes="(max-width: 640px) 80vw, 24rem" />
 	)}
@@ -41,6 +43,7 @@ const { id, heading, project } = Astro.props;
 			<path d="M0 8H98M90 1l8 7-8 7" />
 		</svg>
 	</span>
+	</span>
 </SelectionFrame>
 
 <style>
@@ -50,6 +53,7 @@ const { id, heading, project } = Astro.props;
 		--handle: 0.6em;
 		--inset: 1.1em; /* the image and text sit a bit further in than the heading */
 		display: grid;
+		align-content: start;
 		gap: 0.7rem;
 		width: min(20rem, 85vw);
 		padding: 0.35em 0.5em 1.1rem;
@@ -57,6 +61,32 @@ const { id, heading, project } = Astro.props;
 		color: var(--color-fg);
 		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
 		text-decoration: none;
+		transition:
+			width 0.5s cubic-bezier(0.65, 0, 0.35, 1),
+			height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	/* Everything but the heading fades in once the frame has (mostly) opened. */
+	.preview__body {
+		display: grid;
+		gap: 0.7rem;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.2s ease;
+	}
+
+	:global([data-expanded]) .preview__body {
+		opacity: 1;
+		pointer-events: auto;
+		transition: opacity 0.35s ease 0.3s;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.preview,
+		.preview__body,
+		:global([data-expanded]) .preview__body {
+			transition: none;
+		}
 	}
 
 	.preview:focus-visible {
