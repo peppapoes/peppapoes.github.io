@@ -121,23 +121,50 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 			item.style.setProperty('--lift', `${Math.max(0, Math.min(overflow, room))}px`);
 		};
 
-		// While a card is open the other tags step aside a little, away from it;
-		// the nearer the tag, the further it moves. null lets them all drift back.
+		// While a card is open the other tags step aside, away from it: the nearer the
+		// tag, the further it moves, and always far enough to leave a clear gap around
+		// the card. null lets them all drift back.
 		const floats = [...hero.querySelectorAll<HTMLElement>('.float:not(.float--star)')];
-		const PUSH = 26; // px, for a tag right next to the card
+		const PUSH = 40; // px, for a tag right next to the card
+		const GAP = 36; // px, the least room between the card and any tag
+		const pushOf = (el: HTMLElement, axis: 'x' | 'y') => parseFloat(el.style.getPropertyValue(`--push-${axis}`)) || 0;
 		const makeRoom = (item: HTMLElement | null) => {
-			const card = item?.querySelector<HTMLElement>('[data-card]')?.getBoundingClientRect();
+			const cardEl = item?.querySelector<HTMLElement>('[data-card]');
+			// Where the card ends up: its own tag moves back in place and is lifted (see lift()).
+			let card = { left: 0, right: 0, top: 0, bottom: 0 };
+			if (item && cardEl) {
+				const rect = cardEl.getBoundingClientRect();
+				const left = rect.left - pushOf(item, 'x');
+				const top = item.getBoundingClientRect().top - pushOf(item, 'y') - (parseFloat(item.style.getPropertyValue('--lift')) || 0);
+				card = { left, right: left + rect.width, top, bottom: top + rect.height };
+			}
+
 			for (const other of floats) {
 				let x = 0;
 				let y = 0;
-				if (card && other !== item && !reducedMotion) {
-					const tag = other.getBoundingClientRect();
-					const dx = tag.left + tag.width / 2 - (card.left + card.width / 2);
-					const dy = tag.top + tag.height / 2 - (card.top + card.height / 2);
+				if (cardEl && other !== item && !reducedMotion) {
+					// The tag's own spot, without the push it may still have from the previous card.
+					const rect = other.getBoundingClientRect();
+					const tag = {
+						left: rect.left - pushOf(other, 'x'),
+						right: rect.right - pushOf(other, 'x'),
+						top: rect.top - pushOf(other, 'y'),
+						bottom: rect.bottom - pushOf(other, 'y'),
+					};
+					const dx = (tag.left + tag.right) / 2 - (card.left + card.right) / 2;
+					const dy = (tag.top + tag.bottom) / 2 - (card.top + card.bottom) / 2;
 					const distance = Math.hypot(dx, dy) || 1;
 					const amount = PUSH * Math.max(0.3, 1 - distance / hero.offsetWidth);
 					x = (dx / distance) * amount;
 					y = (dy / distance) * amount;
+
+					// Still too close? Move further along whichever direction needs the least.
+					const gapX = Math.max(card.left - (tag.right + x), tag.left + x - card.right);
+					const gapY = Math.max(card.top - (tag.bottom + y), tag.top + y - card.bottom);
+					if (gapX < GAP && gapY < GAP) {
+						if (GAP - gapX <= GAP - gapY) x += Math.sign(dx || 1) * (GAP - gapX);
+						else y += Math.sign(dy || 1) * (GAP - gapY);
+					}
 				}
 				other.style.setProperty('--push-x', `${x.toFixed(1)}px`);
 				other.style.setProperty('--push-y', `${y.toFixed(1)}px`);

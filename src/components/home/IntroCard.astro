@@ -16,7 +16,7 @@ const { heading } = Astro.props;
 	<span class="intro__heading">{heading}</span>
 	<p class="intro__body">
 		Hi, my name is Femke De Latter, 23 years old and Devine student by heart. Welcome to my portfolio where I
-		showcase all my projects I’m proud of. Hopefully you feel inspired by my work and don’t hesitate to contact me!
+		showcase all my projects I’m proud of. Hopefully you feel inspired by my work and don’t hesitate to contact&nbsp;me!
 	</p>
 </SelectionFrame>
 
@@ -27,7 +27,7 @@ const { heading } = Astro.props;
 		display: grid;
 		align-content: start;
 		gap: 1.1rem;
-		width: min(24rem, 85vw);
+		width: min(27rem, 85vw);
 		padding: 0.35em 0.5em 1.75rem;
 		background: var(--color-bg);
 		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
@@ -49,6 +49,7 @@ const { heading } = Astro.props;
 		font-size: clamp(1rem, 1.3vw, 1.2rem);
 		line-height: 1.35;
 		letter-spacing: 0.02em;
+		text-wrap: pretty; /* no single word alone on the last line */
 	}
 
 	/* On phones the tag stays above the card, so the heading would be doubled. */
