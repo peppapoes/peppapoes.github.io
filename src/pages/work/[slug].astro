@@ -48,20 +48,18 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 	<article class="project">
 		<section class="overview">
-			<div class="project__main">
-				<header class="project__heading">
-					<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
-					<h1 class="project__title">{project.title}</h1>
-				</header>
+			<header class="project__heading">
+				<p class="project__category">{categoryLabels[project.category].toLowerCase()}</p>
+				<h1 class="project__title">{project.title}</h1>
+			</header>
 
-				{images.length > 0 && (
-					<SelectionFrame class="project__media">
-						{images.map(({ src, alt }) => (
-							<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
-						))}
-					</SelectionFrame>
-				)}
-			</div>
+			{images.length > 0 && (
+				<SelectionFrame class="project__media">
+					{images.map(({ src, alt }) => (
+						<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
+					))}
+				</SelectionFrame>
+			)}
 
 			<div class="project__info">
 				{project.assignment && (
@@ -104,8 +102,8 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 				? project.process.map(({ title, text, images }) => (
 						<section class="step">
 							<h2 class="step__title">{title}</h2>
+							<ImageStrip images={images} label={`${title} images`} caption={text} />
 							{text && <p class="step__text">{text}</p>}
-							<ImageStrip images={images} label={`${title} images`} />
 						</section>
 					))
 				: <p class="project__soon">more coming soon!</p>}
@@ -126,7 +124,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 		<section class="inspiration" {...panelAttrs('inspiration')}>
 			{project.inspiration?.length
-				? <ImageStrip images={project.inspiration} label="Inspiration images" />
+				? <ImageStrip images={project.inspiration} label="Inspiration images" layout="wall" />
 				: <p class="project__soon">more coming soon!</p>}
 		</section>
 
@@ -158,8 +156,15 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		history.replaceState(null, '', tab ? `#${tab.dataset.topic}` : location.pathname + location.search);
 	};
 
+	const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 	for (const tab of tabs) {
-		tab.addEventListener('click', () => show(tab.getAttribute('aria-expanded') === 'true' ? null : tab));
+		tab.addEventListener('click', () => {
+			const open = tab.getAttribute('aria-expanded') !== 'true';
+			show(open ? tab : null);
+			// Scroll the tabs to the top of the screen, so the opened topic fills it.
+			if (open) tab.parentElement!.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+		});
 	}
 
 	const fromUrl = tabs.find((tab) => `#${tab.dataset.topic}` === location.hash);
@@ -209,6 +214,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 	}
 
 	.project__heading {
+		grid-area: heading;
 		margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 		padding-left: 0.4rem;
 	}
@@ -218,6 +224,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		margin: clamp(2rem, 3.5vw, 3rem) 0 clamp(2rem, 4vw, 3.5rem);
+		scroll-margin-top: 1rem;
 		border-bottom: 1.5px solid var(--color-fg);
 	}
 
@@ -276,9 +283,10 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		from { opacity: 0; translate: 0 0.5rem; }
 	}
 
+	/* Title and text on the left, the framed image on the right. */
 	.overview {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template: 'heading media' auto 'info media' 1fr / minmax(0, 1fr) minmax(0, 1fr);
 		column-gap: clamp(2rem, 6vw, 7rem);
 		align-items: start;
 	}
@@ -305,10 +313,14 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 	.project :global(.project__media) {
 		--handle: 1.1rem;
+		grid-area: media;
+		justify-self: end;
 		display: grid;
 		gap: 0.6rem;
+		width: 100%;
 		/* Small enough that the tabs below still show on the first screen. */
-		max-width: min(34rem, calc((100svh - 31.5rem) * 1.48));
+		max-width: min(38rem, calc((100svh - 24.5rem) * 1.48));
+		margin-top: clamp(1rem, 3vw, 2.5rem);
 		padding: 0.9rem;
 	}
 
@@ -320,7 +332,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 
 	.step + .step {
-		margin-top: clamp(2rem, 3.5vw, 3rem);
+		margin-top: clamp(2.5rem, 5vw, 4.5rem);
 	}
 
 	.step__title {
@@ -332,8 +344,8 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 	}
 
 	.step__text {
-		max-width: 44rem;
-		margin: 0 0 1.5rem;
+		max-width: 38rem;
+		margin: 1.5rem 0 0;
 		padding-left: 0.4rem;
 		font-size: clamp(1rem, 1.35vw, 1.3rem);
 		font-weight: 300;
@@ -350,9 +362,10 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 	}
 
 	.project__info {
+		grid-area: info;
 		display: grid;
 		gap: clamp(1.5rem, 2.5vw, 2.25rem);
-		padding-top: 1.5rem;
+		padding-left: 0.4rem;
 	}
 
 	.project__info section {
@@ -419,12 +432,13 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 	@media (max-width: 800px) {
 		.overview {
-			grid-template-columns: minmax(0, 1fr);
-			row-gap: 2.5rem;
+			grid-template: 'heading' 'media' 'info' / minmax(0, 1fr);
 		}
 
-		.project__info {
-			padding-top: 0;
+		.project :global(.project__media) {
+			justify-self: start;
+			margin-top: 0;
+			margin-bottom: 2.5rem;
 		}
 	}
 </style>

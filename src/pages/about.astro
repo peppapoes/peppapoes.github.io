@@ -1,8 +1,383 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ComingSoon from '../components/ComingSoon.astro';
+import SelectionFrame from '../components/SelectionFrame.astro';
+import Star from '../components/Star.astro';
+import ToolIcon from '../components/work/ToolIcon.astro';
+import PhotoStrip from '../components/home/PhotoStrip.astro';
+import { skills } from '../data/tools';
+
+// Three topics; one is open at a time (see the script below).
+const tabs = [
+	{ id: 'femke', label: 'Femke' },
+	{ id: 'skills', label: 'Skills' },
+	{ id: 'studies', label: 'Studies' },
+];
+const panelAttrs = (id: string, open = false) => ({
+	id: `panel-${id}`,
+	role: 'tabpanel',
+	'aria-labelledby': `tab-${id}`,
+	hidden: !open,
+});
+
+// Oldest first; `short` is the caption on the photo strip.
+const studies = [
+	{ name: 'Secondary Art School', short: 'KSO - Art school' },
+	{ name: 'Bachelor IPO - Industrial product Design, Interior Design', short: 'IPO - Industrial Product Design / Interior Design' },
+	{ name: 'Bachelor Devine - Digital Design and Development', short: 'DEVINE - Digital Design & Development' },
+];
+
+// Around the figure: x and y as % of its box.
+const stars = [
+	{ x: 104, y: 8, size: '2.4vw', variant: 'outline-alt' },
+	{ x: -22, y: 46, size: '2.2vw', variant: 'filled' },
+	{ x: 96, y: 80, size: '1.3vw', variant: 'outline' },
+] as const;
 ---
 
-<Layout title="About Me — FDSGNS">
-	<ComingSoon title="About Me" />
+<Layout title="About Me — FDSGNS" description="About Femke De Latter: who she is, her design, development and modelling skills, and her studies.">
+	<div class="about">
+		<h1 class="about__title">
+			<SelectionFrame as="span" accent class="about__title-first">FEMKE</SelectionFrame>
+			<span>DE LATTER</span>
+		</h1>
+
+		<div class="about__main">
+			<div class="tabs" role="tablist" aria-label="About me">
+				{tabs.map(({ id, label }, i) => (
+					<button
+						class="tabs__tab"
+						id={`tab-${id}`}
+						type="button"
+						role="tab"
+						aria-selected={i === 0 ? 'true' : 'false'}
+						aria-controls={`panel-${id}`}
+						data-topic={id}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
+			<div class="panels">
+				<section class="panel" {...panelAttrs('femke', true)}>
+					<h2 class="panel__heading">Get to know me a bit</h2>
+					<p>
+						Hi, my name is Femke. I am a student in my 20s and in the prime of my life. As a person, I am very eager to
+						learn, and I love to seek inspiration or little things to discover everywhere.
+					</p>
+					<p>
+						I am very passionate about design and music, they are the two things that make my days bright. That and my
+						roommate, my cat Peppa.
+					</p>
+				</section>
+
+				<section class="panel panel--skills" {...panelAttrs('skills')}>
+					{skills.map(({ title, tools }) => (
+						<div class="skillset">
+							<h2 class="panel__heading">{title}</h2>
+							<ul class="skillset__tools">
+								{tools.map((tool) => <ToolIcon tool={tool} />)}
+							</ul>
+						</div>
+					))}
+				</section>
+
+				<section class="panel panel--studies" {...panelAttrs('studies')}>
+					<h2 class="panel__heading">Studies</h2>
+					<ul class="studies">
+						{studies.map(({ name }) => <li>{name}</li>)}
+					</ul>
+					<div class="panel__strip" aria-hidden="true">
+						<PhotoStrip captions={studies.map(({ short }) => short)} flip />
+					</div>
+				</section>
+			</div>
+		</div>
+
+		<!-- Placeholder drawing; a photo takes its place later. -->
+		<div class="about__figure" aria-hidden="true">
+			<svg viewBox="0 0 208 400" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M131 2c20 0 52-2 56 6 6 14 4 52-2 68-3 8-10 12-8 16l13 4" />
+				<path d="M92 12C70 12 60 22 60 40c0 16 6 30-4 36-6 4-14 5-20 8" />
+				<path d="M68 38c2-18 30-22 50-18 22 4 40 28 38 50-1 14-22 22-40 20-26-2-50-26-48-52z" />
+				<path d="M82 46c8-12 34-14 50-6 12 6 16 24 6 34-12 10-36 8-48-2-8-6-12-18-8-26z" />
+				<path d="M76 94c-10 10-26 18-40 16-20 22-26 70-26 124" />
+				<path d="M150 96c8 0 20-2 26-4 6 40 8 110 6 168" />
+				<path d="M62 162l-12 96M136 158v96" />
+				<path d="M2 252c8-2 14-2 20-2M2 252c4 6 22 6 34 4 6-4 28-8 42 6 14-6 30-12 44-10 12 2 24 8 26 18" />
+				<path d="M158 242c12 0 28-1 36 2 6 4 10 16 4 22-4 4-14 4-22 4" />
+				<path d="M46 264c0 30 6 60 14 90M92 262v92M160 266c-4 30-12 70-18 102" />
+				<path d="M68 362c-8 10-18 16-16 24 14 2 40 2 52-16 4-8 8-18 6-28" />
+				<path d="M100 346c-2 10 0 18 6 20 8 2 20 2 26-2 4-8 6-18-2-26-6-4-14-4-16-2" />
+			</svg>
+
+			{stars.map(({ x, y, size, variant }, i) => (
+				<Star
+					class="about__star"
+					variant={variant}
+					size={`max(${size}, 0.9rem)`}
+					style={`left: ${x}%; top: ${y}%; animation-delay: -${i * 1.7}s`}
+				/>
+			))}
+		</div>
+	</div>
 </Layout>
+
+<script>
+	const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tabs [data-topic]')];
+
+	const show = (tab: HTMLButtonElement) => {
+		for (const other of tabs) {
+			other.setAttribute('aria-selected', String(other === tab));
+			other.tabIndex = other === tab ? 0 : -1;
+			document.getElementById(other.getAttribute('aria-controls')!)!.hidden = other !== tab;
+		}
+	};
+
+	tabs.forEach((tab, i) => {
+		tab.addEventListener('click', () => {
+			show(tab);
+			// Keep the open topic in the URL (e.g. /about#skills) so it can be shared.
+			history.replaceState(null, '', i === 0 ? location.pathname : `#${tab.dataset.topic}`);
+		});
+		// Arrow keys move between the tabs.
+		tab.addEventListener('keydown', (e) => {
+			const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+			if (!step) return;
+			const next = tabs[(i + step + tabs.length) % tabs.length];
+			next.focus();
+			next.click();
+		});
+	});
+
+	const fromUrl = () => show(tabs.find((tab) => `#${tab.dataset.topic}` === location.hash) ?? tabs[0]);
+	addEventListener('hashchange', fromUrl);
+	fromUrl();
+</script>
+
+<style>
+	/* Topics on the left; on the right the name and a figure sitting on the line that closes the page. */
+	.about {
+		/* Short enough that the figure and the line it sits on fit on the first screen. */
+		--figure-height: clamp(16rem, min(39vw, 100svh - 23rem), 38rem);
+		--seat: 0.655; /* how far down the figure the line it sits on is */
+		position: relative;
+		display: grid;
+		grid-template: 'main title' auto 'main figure' 1fr / minmax(0, 1fr) auto;
+		column-gap: clamp(2rem, 7vw, 8rem);
+		align-items: start;
+		margin: 0 var(--gutter) calc(var(--figure-height) * (1 - var(--seat)) + 2rem);
+		padding-top: clamp(1rem, 2.5vw, 2.5rem);
+		border-bottom: 1.5px solid var(--color-fg);
+	}
+
+	.about__title {
+		grid-area: title;
+		display: grid;
+		justify-items: start;
+		gap: 0.1em;
+		margin: 0;
+		color: var(--color-accent);
+		font-size: clamp(3.5rem, 6.3vw, 6rem);
+		font-weight: 700;
+		line-height: 0.85;
+		letter-spacing: -0.04em;
+		white-space: nowrap;
+	}
+
+	.about__title :global(.about__title-first) {
+		--handle: 0.14em;
+		padding: 0.1em 0.12em 0.02em;
+	}
+
+	.about__title > span:last-child {
+		padding-left: 0.1em;
+	}
+
+	.about__figure {
+		grid-area: figure;
+		position: relative;
+		align-self: end;
+		justify-self: center;
+		height: var(--figure-height);
+		aspect-ratio: 208 / 400;
+		margin-top: clamp(1rem, 2vw, 2rem);
+		margin-bottom: calc(var(--figure-height) * (var(--seat) - 1));
+	}
+
+	.about__figure svg {
+		display: block;
+		height: 100%;
+	}
+
+	.about__figure :global(.about__star) {
+		position: absolute;
+		animation: bob 6s ease-in-out infinite alternate;
+	}
+
+	@keyframes bob {
+		from { transform: translateY(-5px) rotate(-6deg); }
+		to { transform: translateY(5px) rotate(6deg); }
+	}
+
+	.about__main {
+		grid-area: main;
+		position: relative;
+		padding-bottom: clamp(1.5rem, 2.5vw, 2.5rem);
+	}
+
+	.tabs {
+		display: flex;
+		gap: clamp(1.75rem, 4vw, 4rem);
+		margin-top: clamp(0.5rem, 1.6vw, 1.5rem);
+		padding-bottom: clamp(0.9rem, 1.8vw, 1.6rem);
+		border-bottom: 1.5px solid var(--color-fg);
+	}
+
+	.tabs__tab {
+		padding: 0.25em 0;
+		border: 0;
+		background: none;
+		color: var(--color-fg);
+		font: inherit;
+		font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+		letter-spacing: -0.04em;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.tabs__tab:hover,
+	.tabs__tab[aria-selected='true'] {
+		color: var(--color-accent);
+	}
+
+	/* Bold without the other tabs shifting. */
+	.tabs__tab[aria-selected='true'] {
+		-webkit-text-stroke: 0.045em currentColor;
+	}
+
+	.tabs__tab:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 4px;
+	}
+
+	/* The topics share one spot that's as tall as the tallest, so the page doesn't jump between them. */
+	.panels {
+		display: grid;
+	}
+
+	.panel {
+		grid-area: 1 / 1;
+		position: relative;
+		padding-top: clamp(1.75rem, 3vw, 2.75rem);
+	}
+
+	.panel[hidden] {
+		display: block;
+		visibility: hidden;
+	}
+
+	.panel:not([hidden]) {
+		animation: fade-in 0.4s ease;
+	}
+
+	@keyframes fade-in {
+		from { opacity: 0; }
+	}
+
+	.panel__heading {
+		margin: 0 0 clamp(0.75rem, 1.2vw, 1.1rem);
+		font-family: var(--font-hand);
+		font-size: clamp(1.2rem, 1.5vw, 1.45rem);
+		font-weight: 400;
+		letter-spacing: 0.02em;
+	}
+
+	.panel p,
+	.studies {
+		max-width: 40rem;
+		margin: 0;
+		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		font-weight: 300;
+		line-height: 1.3;
+		letter-spacing: -0.03em;
+	}
+
+	.panel p + p {
+		margin-top: 1.3em;
+	}
+
+	.skillset + .skillset {
+		margin-top: clamp(1.5rem, 2.2vw, 2rem);
+	}
+
+	/* One row of tiles per topic. */
+	.skillset__tools {
+		--tool-size: clamp(2.6rem, 3.6vw, 3.25rem);
+		display: flex;
+		flex-wrap: wrap;
+		gap: clamp(0.5rem, 0.8vw, 0.7rem);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.studies {
+		display: grid;
+		gap: 1.1em;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* The strip hangs from the line under the tabs, between the list and the name. */
+	.panel--studies .studies {
+		max-width: calc(100% - var(--figure-height) * 0.38);
+	}
+
+	.panel__strip {
+		position: absolute;
+		/* Sized to hang between the tabs' line and the line at the bottom. */
+		top: calc(var(--figure-height) * -0.2);
+		right: -4.5vw;
+		width: calc(var(--figure-height) * 0.36);
+		pointer-events: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.panel:not([hidden]),
+		.about__figure :global(.about__star) {
+			animation: none;
+		}
+	}
+
+	@media (max-width: 800px) {
+		.about {
+			--figure-height: 19rem;
+			grid-template: 'title' 'main' 'figure' / minmax(0, 1fr);
+		}
+
+		.about__main {
+			margin-top: 1.5rem;
+			padding-bottom: 1rem;
+		}
+
+		.about__figure {
+			margin-top: 1rem;
+		}
+
+		.panel[hidden] {
+			display: none;
+		}
+
+		/* No room beside the list: the strip goes underneath it. */
+		.panel--studies .studies {
+			max-width: none;
+		}
+
+		.panel__strip {
+			position: static;
+			width: min(50%, 11rem);
+			margin: 2.5rem auto 0;
+		}
+	}
+</style>

@@ -109,7 +109,7 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 		const SCREEN_MARGIN = 24; // keep this much room below an opened card
 		const HEADER_SPACE = 96; // and never lift a tag behind the header
-		const CLOSE_DURATION = reducedMotion ? 0 : 500; // matches the card's size transition
+		const CLOSE_DURATION = reducedMotion ? 0 : 200; // matches the card's fade
 		const closing = new Map<HTMLElement, number>();
 
 		// Low tags would open their card below the fold: lift the tag and card up
@@ -121,61 +121,54 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 			item.style.setProperty('--lift', `${Math.max(0, Math.min(overflow, room))}px`);
 		};
 
-		// The card replaces its tag at exactly the tag's size, then its frame grows to
-		// full size and the content fades in (data-expanded). Closing runs backwards.
+		// While a card is open the other tags step aside a little, away from it;
+		// the nearer the tag, the further it moves. null lets them all drift back.
+		const floats = [...hero.querySelectorAll<HTMLElement>('.float:not(.float--star)')];
+		const PUSH = 26; // px, for a tag right next to the card
+		const makeRoom = (item: HTMLElement | null) => {
+			const card = item?.querySelector<HTMLElement>('[data-card]')?.getBoundingClientRect();
+			for (const other of floats) {
+				let x = 0;
+				let y = 0;
+				if (card && other !== item && !reducedMotion) {
+					const tag = other.getBoundingClientRect();
+					const dx = tag.left + tag.width / 2 - (card.left + card.width / 2);
+					const dy = tag.top + tag.height / 2 - (card.top + card.height / 2);
+					const distance = Math.hypot(dx, dy) || 1;
+					const amount = PUSH * Math.max(0.3, 1 - distance / hero.offsetWidth);
+					x = (dx / distance) * amount;
+					y = (dy / distance) * amount;
+				}
+				other.style.setProperty('--push-x', `${x.toFixed(1)}px`);
+				other.style.setProperty('--push-y', `${y.toFixed(1)}px`);
+			}
+		};
+
+		// The card appears over its tag, always at its one fixed size: data-open puts it
+		// in place and data-expanded fades it in. Closing fades it out, then removes it.
 		const open = (item: HTMLElement) => {
 			const card = item.querySelector<HTMLElement>('[data-card]');
-			const tag = item.querySelector<HTMLElement>('.tag');
-			if (!card || !tag) return;
-			if (phone.matches) {
-				card.style.width = card.style.height = '';
-				item.setAttribute('data-open', '');
-				item.setAttribute('data-expanded', '');
-				return;
-			}
+			if (!card) return;
 			clearTimeout(closing.get(item));
-
-			const from = item.hasAttribute('data-open')
-				? { width: card.offsetWidth, height: card.offsetHeight } // reopened while closing
-				: { width: tag.offsetWidth, height: tag.offsetHeight };
 			item.setAttribute('data-open', '');
-
-			card.style.width = card.style.height = '';
-			const to = { width: card.offsetWidth, height: card.offsetHeight };
-			lift(item, to.height);
-
-			// Jump to the starting size without a transition, then grow from there.
-			card.style.transition = 'none';
-			card.style.width = `${from.width}px`;
-			card.style.height = `${from.height}px`;
-			card.getBoundingClientRect();
-			card.style.transition = '';
-			card.style.width = `${to.width}px`;
-			card.style.height = `${to.height}px`;
+			if (!phone.matches) {
+				lift(item, card.offsetHeight);
+				makeRoom(item); // also makes sure the fade starts from invisible
+			}
 			item.setAttribute('data-expanded', '');
 		};
 
 		const close = (item: HTMLElement) => {
-			const card = item.querySelector<HTMLElement>('[data-card]');
-			const tag = item.querySelector<HTMLElement>('.tag');
-			if (!card || !tag || !item.hasAttribute('data-expanded')) return;
+			if (!item.hasAttribute('data-expanded')) return;
+			item.removeAttribute('data-expanded');
 			if (phone.matches) {
 				item.removeAttribute('data-open');
-				item.removeAttribute('data-expanded');
 				return;
 			}
 
-			item.removeAttribute('data-expanded');
-			card.style.width = `${tag.offsetWidth}px`;
-			card.style.height = `${tag.offsetHeight}px`;
 			item.style.setProperty('--lift', '0px');
-			closing.set(
-				item,
-				window.setTimeout(() => {
-					item.removeAttribute('data-open');
-					card.style.width = card.style.height = '';
-				}, CLOSE_DURATION),
-			);
+			if (!items.some((other) => other.hasAttribute('data-expanded'))) makeRoom(null);
+			closing.set(item, window.setTimeout(() => item.removeAttribute('data-open'), CLOSE_DURATION));
 		};
 
 		const show = (item: HTMLElement | null) => items.forEach((other) => (other === item ? open(other) : close(other)));
@@ -221,7 +214,9 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 	.float {
 		position: absolute;
-		translate: calc(var(--mx) * var(--depth) * 1px) calc(var(--my) * var(--depth) * 1px);
+		translate:
+			calc(var(--mx) * var(--depth) * 1px + var(--push-x, 0px))
+			calc(var(--my) * var(--depth) * 1px + var(--push-y, 0px));
 		transition: translate 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 	}
 
@@ -249,14 +244,19 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 		to { transform: translateY(6px) rotate(8deg); }
 	}
 
-	/* The card opens out of its tag: it sits exactly on top of it and takes over
-	   (see open() above), so it only needs to appear and disappear here. */
+	/* The card sits exactly on top of its tag and fades in over it (see open() above). */
 	.float__panel {
 		position: absolute;
 		top: 0;
 		left: 0;
 		visibility: hidden;
+		opacity: 0;
 		pointer-events: none;
+		transition: opacity 0.2s ease;
+	}
+
+	.float[data-expanded] .float__panel {
+		opacity: 1;
 	}
 
 	/* Tags on the right open towards the left, so the card stays on screen. */
@@ -270,8 +270,9 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 		pointer-events: auto;
 	}
 
-	.float[data-open] :global(.tag) {
+	.float[data-expanded] :global(.tag) {
 		opacity: 0;
+		transition: opacity 0.2s ease;
 	}
 
 	.visually-hidden {
@@ -285,7 +286,9 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 	@media (prefers-reduced-motion: reduce) {
 		.float,
-		.float__inner {
+		.float__inner,
+		.float__panel,
+		.float[data-expanded] :global(.tag) {
 			transition: none;
 		}
 
@@ -347,10 +350,12 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 		.float[data-open] .float__panel {
 			display: block;
+			opacity: 1;
+			transition: none;
 			animation: card-in 0.35s ease;
 		}
 
-		.float[data-open] :global(.tag) {
+		.float[data-expanded] :global(.tag) {
 			opacity: 1;
 		}
 

@@ -1,12 +1,14 @@
 import type { ImageMetadata } from 'astro';
+import type { Tool } from './tools';
 import milesAndMeals from '../assets/images/milesandmeals_preview.jpg';
 import kickstarter from '../assets/images/kickstarter_preview.jpg';
 import clickGame from '../assets/images/clickgame_preview.jpg';
 import antwerpOnTap from '../assets/images/antwerpontap_preview.jpg';
+import type01 from '../assets/images/type01-mockupBG.png';
 import kickstarterVideo from '../assets/videos/kickstarter.mp4';
 
-// Every image in src/assets/images, by file name, so projects can list many at once.
-const imageFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/images/*.{png,jpg,jpeg,webp}', { eager: true });
+// Every image in src/assets/images (and its folders), by file name, so projects can list many at once.
+const imageFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/images/**/*.{png,jpg,jpeg,webp}', { eager: true });
 const image = (file: string) => {
 	const found = imageFiles[`../assets/images/${file}`];
 	if (!found) throw new Error(`Image not found in src/assets/images: ${file}`);
@@ -15,6 +17,15 @@ const image = (file: string) => {
 /** `series('pitchdeck', 3, 'png', 'Pitch deck slide')` → pitchdeck1.png … pitchdeck3.png */
 const series = (name: string, count: number, ext: string, alt: string) =>
 	Array.from({ length: count }, (_, i) => ({ src: image(`${name}${i + 1}.${ext}`), alt: `${alt} ${i + 1}` }));
+/** `folder('type01-inspiration', 'Type01 inspiration')` → every image in src/assets/images/type01-inspiration, by file name. */
+const folder = (name: string, alt: string) => {
+	const prefix = `../assets/images/${name}/`;
+	const files = Object.keys(imageFiles)
+		.filter((file) => file.startsWith(prefix))
+		.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+	if (!files.length) throw new Error(`No images found in src/assets/images/${name}`);
+	return files.map((file, i) => ({ src: imageFiles[file].default, alt: `${alt} ${i + 1}` }));
+};
 
 export type Category = 'visual-design' | 'motion-design' | 'coding' | 'ux' | 'integration';
 
@@ -36,8 +47,6 @@ export const filterLabels: Record<Category, string> = {
 	integration: 'Integration of all courses',
 };
 
-export type Tool = 'after-effects' | 'photoshop' | 'illustrator' | 'indesign' | 'figma';
-
 export interface Project {
 	/** Used in the URL: /work/slug */
 	slug: string;
@@ -51,6 +60,8 @@ export interface Project {
 	previewTitle?: string;
 	/** Third line in the home page preview; falls back to the category. */
 	tagline?: string;
+	/** The project its category's tag on the home page opens. */
+	featured?: boolean;
 	assignment?: string;
 	/** One string per paragraph. */
 	idea?: string[];
@@ -61,7 +72,7 @@ export interface Project {
 	process?: { title: string; text?: string; images: ProjectImage[] }[];
 	/** "End result" tab on the project page. */
 	video?: string;
-	/** "Inspiration" tab: a scrollable row of images. */
+	/** "Inspiration" tab: a wall of images in columns. */
 	inspiration?: ProjectImage[];
 }
 
@@ -106,10 +117,12 @@ export const projects: Project[] = [
 		],
 		tools: ['after-effects', 'photoshop'],
 		process: [
-			{ title: 'Storyboard', images: series('storyboard', 4, 'png', 'Storyboard page') },
-			{ title: 'Styleframes', images: series('styleframe', 3, 'png', 'Styleframe') },
-			{ title: 'Pitch deck', images: series('pitchdeck', 11, 'png', 'Pitch deck slide') },
+			// TODO: replace the placeholder texts.
+			{ title: 'Storyboard', text: 'Placeholder: a short description of the storyboard comes here.', images: series('storyboard', 4, 'png', 'Storyboard page') },
+			{ title: 'Styleframes', text: 'Placeholder: a short description of the styleframes comes here.', images: series('styleframe', 3, 'png', 'Styleframe') },
+			{ title: 'Pitch deck', text: 'Placeholder: a short description of the pitch deck comes here.', images: series('pitchdeck', 11, 'png', 'Pitch deck slide') },
 		],
+		inspiration: folder('kickstarter-inspiration', 'Kickstarter inspiration'),
 	},
 	{
 		slug: 'antwerp-on-tap',
@@ -122,8 +135,22 @@ export const projects: Project[] = [
 	{
 		slug: 'type01',
 		title: 'Type01',
+		previewTitle: 'Type01 conference website',
 		category: 'visual-design',
 		year: 2026,
+		featured: true,
+		preview: type01,
+		previewAlt: 'Phone and laptop showing the website of the Type01 magazine typography conference',
+		assignment: 'Design a website for the Type01 magazine typography conference for mobile and desktop.',
+		idea: [
+			'The idea behind this concept was to play with typography, of course, but also to make the experience genuinely playful by turning the website into something dynamic. The neon colours add an extra layer to that sense of play.',
+			'I wanted every visitor to feel a wave of curiosity and a touch of playfulness, offering them a fresh way to get to know Type01.',
+		],
+		process: [
+			// TODO: replace the placeholder text.
+			{ title: 'Try-outs', text: 'Placeholder: a short description of the try-outs comes here.', images: folder('type01-tryouts', 'Type01 try-out') },
+		],
+		inspiration: folder('type01-inspiration', 'Type01 inspiration'),
 	},
 	{
 		slug: 'beyond-brewing',
@@ -141,5 +168,8 @@ export const projects: Project[] = [
 
 export const projectUrl = (project: Project) => `/work/${project.slug}`;
 
-/** The project a category tag on the home page links to: the first one with a preview. */
-export const featuredProject = (category: Category) => projects.find((p) => p.category === category && p.preview);
+/** The project a category tag on the home page links to: the featured one, or else the first one with a preview. */
+export const featuredProject = (category: Category) => {
+	const inCategory = projects.filter((p) => p.category === category && p.preview);
+	return inCategory.find((p) => p.featured) ?? inCategory[0];
+};

@@ -5,9 +5,11 @@ import strip from '../../assets/images/polaroid-strip.png';
 /** Polaroid strip with a handwritten caption on the bottom of each frame. */
 interface Props {
 	captions: string[];
+	/** Mirrors the strip, so it leans the other way. */
+	flip?: boolean;
 }
 
-const { captions } = Astro.props;
+const { captions, flip = false } = Astro.props;
 
 // Caption anchor points as a percentage of the image, matching the three frames.
 const positions = [
@@ -17,11 +19,11 @@ const positions = [
 ];
 ---
 
-<figure class="strip">
+<figure class:list={['strip', { 'strip--flip': flip }]}>
 	<Image src={strip} alt="" widths={[300, 600]} sizes="(max-width: 800px) 13rem, 22vw" />
 
 	{captions.map((caption, i) => (
-		<figcaption class="strip__caption" style={`left: ${positions[i].x}%; top: ${positions[i].y}%`}>
+		<figcaption class="strip__caption" style={`left: ${flip ? 100 - positions[i].x : positions[i].x}%; top: ${positions[i].y}%`}>
 			{caption}
 		</figcaption>
 	))}
@@ -50,5 +52,13 @@ const positions = [
 		font-size: 4.6cqi;
 		line-height: 1.2;
 		text-align: center;
+	}
+
+	.strip--flip img {
+		scale: -1 1;
+	}
+
+	.strip--flip .strip__caption {
+		rotate: 7deg;
 	}
 </style>

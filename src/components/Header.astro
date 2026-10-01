@@ -9,13 +9,16 @@ const links = [
 	{ label: 'Contact', href: '/contact' },
 ];
 
+// One element per letter, so hovering the logo can type them out one by one.
+const letters = [...'FDSGNS'];
+
 const current = Astro.url.pathname.replace(/\/$/, '');
 const isCurrent = (href: string) => current === href || current.startsWith(`${href}/`);
 ---
 
 <header class="header">
 	<a href="/" class="logo" aria-label="FDSGNS — home">
-		FDSGNS
+		{letters.map((letter, i) => <span class="logo__letter" style={`--i: ${i}`} aria-hidden="true">{letter}</span>)}
 		<Star variant="outline-alt" size="1.5em" class="logo__star" />
 	</a>
 
@@ -38,7 +41,7 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 <dialog class="menu" id="menu" aria-label="Menu">
 	<div class="menu__top">
 		<a href="/" class="logo" aria-label="FDSGNS — home">
-			FDSGNS
+			{letters.map((letter, i) => <span class="logo__letter" style={`--i: ${i}`} aria-hidden="true">{letter}</span>)}
 			<Star variant="outline-alt" size="1.5em" class="logo__star" />
 		</a>
 		<button class="menu__close" type="button" aria-label="Close menu" data-menu-close></button>
@@ -47,7 +50,15 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 	<nav aria-label="Main">
 		<ul class="menu__links">
 			{links.map(({ label, href }) => (
-				<li><a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>{label.toLowerCase()}</a></li>
+				<li>
+					<a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>
+						<span class="menu__label">
+							{isCurrent(href) && <Star class="menu__star menu__star--before" variant="filled" size="0.45em" />}
+							{label.toLowerCase()}
+							{isCurrent(href) && <Star class="menu__star menu__star--after" variant="filled" size="0.45em" />}
+						</span>
+					</a>
+				</li>
 			))}
 		</ul>
 	</nav>
@@ -84,6 +95,24 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 		font-weight: 500;
 		letter-spacing: -0.04em;
 		text-decoration: none;
+		transform-origin: left center;
+		transition: scale 0.3s ease;
+	}
+
+	/* On hover the logo grows a little and is typed out again in pink, letter by letter. */
+	.logo:hover,
+	.logo:focus-visible {
+		scale: 1.2;
+	}
+
+	.logo:hover .logo__letter,
+	.logo:focus-visible .logo__letter {
+		color: var(--color-accent);
+		animation: type 0.01s calc(var(--i) * 90ms + 100ms) both;
+	}
+
+	@keyframes type {
+		from { opacity: 0; }
 	}
 
 	.logo :global(.logo__star) {
@@ -215,6 +244,27 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 		color: var(--color-accent);
 	}
 
+	/* The current page gets a pink star on each side. */
+	.menu__label {
+		position: relative;
+		display: inline-block;
+	}
+
+	.menu__label :global(.menu__star) {
+		position: absolute;
+		top: 50%;
+		color: currentColor;
+		translate: 0 -40%;
+	}
+
+	.menu__label :global(.menu__star--before) {
+		right: calc(100% + 0.15em);
+	}
+
+	.menu__label :global(.menu__star--after) {
+		left: calc(100% + 0.15em);
+	}
+
 	.menu__footer {
 		position: relative;
 		display: flex;
@@ -256,7 +306,9 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.menu[open] {
+		.menu[open],
+		.logo:hover .logo__letter,
+		.logo:focus-visible .logo__letter {
 			animation: none;
 		}
 	}

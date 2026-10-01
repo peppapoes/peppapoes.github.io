@@ -1,49 +1,139 @@
 ---
 /**
- * A row of images that scrolls sideways and bleeds off the right edge of the
- * page. Scroll with a trackpad or shift + wheel, or drag it with the mouse.
+ * A row of small images that scrolls sideways and bleeds off the right edge of
+ * the page. Scroll with a trackpad or shift + wheel, or drag it with the mouse.
+ * With `layout="wall"` the images fill a few columns instead, nothing to scroll.
+ * Clicking an image opens it large in a popup, with arrows to browse the row
+ * and the row's caption underneath.
  */
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import type { ProjectImage } from '../../data/projects';
 
 interface Props {
 	images: ProjectImage[];
 	label: string;
+	/** Shown under the large image in the popup, the same for every image in the row. */
+	caption?: string;
+	layout?: 'row' | 'wall';
 }
 
-const { images, label } = Astro.props;
+const { images, label, caption, layout = 'row' } = Astro.props;
+
+// The large version for the popup.
+const items = await Promise.all(
+	images.map(async ({ src, alt }) => ({ src, alt, full: await getImage({ src, width: Math.min(src.width, 2000) }) })),
+);
 ---
 
-<div class="strip" data-strip tabindex="0" role="region" aria-label={label}>
-	{images.map(({ src, alt }) => (
-		<Image class="strip__item" src={src} alt={alt} widths={[600, 1000, 1400]} sizes="40vw" loading="lazy" draggable="false" />
+<div class:list={['strip', { 'strip--wall': layout === 'wall' }]} data-strip={layout} role="region" aria-label={label}>
+	{items.map(({ src, alt, full }) => (
+		<button class="strip__item" type="button" data-full={full.src} aria-label={`View larger: ${alt}`}>
+			<Image src={src} alt={alt} widths={[400, 800, 1200]} sizes={layout === 'wall' ? '(max-width: 640px) 45vw, 20vw' : '30vw'} loading="lazy" draggable="false" />
+		</button>
 	))}
 </div>
 
+<dialog class="lightbox" aria-label={label}>
+	<button class="lightbox__close" type="button" data-close aria-label="Close">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg>
+	</button>
+
+	<button class="lightbox__arrow lightbox__arrow--prev" type="button" data-step="-1" aria-label="Previous image">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M13 4l8 8-8 8" /></svg>
+	</button>
+
+	<img class="lightbox__image" data-image alt="" />
+
+	<button class="lightbox__arrow lightbox__arrow--next" type="button" data-step="1" aria-label="Next image">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M13 4l8 8-8 8" /></svg>
+	</button>
+
+	<div class="lightbox__info">
+		<p class="lightbox__count" data-count aria-live="polite"></p>
+		{caption && <p class="lightbox__caption">{caption}</p>}
+	</div>
+</dialog>
+
 <script>
-	// Drag to scroll with a mouse (touch and trackpads scroll natively).
 	for (const strip of document.querySelectorAll<HTMLElement>('[data-strip]')) {
+		// Drag to scroll with a mouse (touch and trackpads scroll natively).
 		let startX = 0;
 		let startScroll = 0;
-		let dragging = false;
+		let pressed = false;
+		let dragged = false;
 
+		const stop = () => {
+			pressed = false;
+			strip.classList.remove('is-dragging');
+			setTimeout(() => (dragged = false));
+		};
 		strip.addEventListener('pointerdown', (e) => {
-			if (e.pointerType !== 'mouse') return;
-			dragging = true;
+			if (e.pointerType !== 'mouse' || e.button !== 0 || strip.dataset.strip === 'wall') return;
+			pressed = true;
+			dragged = false;
 			startX = e.clientX;
 			startScroll = strip.scrollLeft;
-			strip.setPointerCapture(e.pointerId);
-			strip.classList.add('is-dragging');
 		});
 		strip.addEventListener('pointermove', (e) => {
-			if (dragging) strip.scrollLeft = startScroll - (e.clientX - startX);
+			if (!pressed) return;
+			if (e.buttons === 0) return stop();
+			const moved = e.clientX - startX;
+			// Only a real drag takes over, so a plain click still reaches the image.
+			if (!dragged && Math.abs(moved) > 5) {
+				dragged = true;
+				strip.setPointerCapture(e.pointerId);
+				strip.classList.add('is-dragging');
+			}
+			if (dragged) strip.scrollLeft = startScroll - moved;
 		});
-		const stop = () => {
-			dragging = false;
-			strip.classList.remove('is-dragging');
-		};
 		strip.addEventListener('pointerup', stop);
 		strip.addEventListener('pointercancel', stop);
+		// Letting go of a drag on top of an image shouldn't open it.
+		strip.addEventListener('click', (e) => dragged && e.stopPropagation(), true);
+
+		// Click an image to see it large; browse the row with the arrows, arrow keys or a swipe.
+		const lightbox = strip.nextElementSibling as HTMLDialogElement;
+		const items = [...strip.querySelectorAll<HTMLButtonElement>('[data-full]')];
+		const image = lightbox.querySelector<HTMLImageElement>('[data-image]')!;
+		const count = lightbox.querySelector<HTMLElement>('[data-count]')!;
+		let current = 0;
+
+		const at = (index: number) => items[(index + items.length) % items.length];
+		const go = (index: number) => {
+			current = (index + items.length) % items.length;
+			image.src = at(current).dataset.full!;
+			image.alt = at(current).querySelector('img')!.alt;
+			count.textContent = `${current + 1} / ${items.length}`;
+			// Load the neighbours already, so stepping through feels instant.
+			for (const step of [1, -1]) new Image().src = at(current + step).dataset.full!;
+		};
+
+		lightbox.toggleAttribute('data-single', items.length < 2);
+		items.forEach((item, index) =>
+			item.addEventListener('click', () => {
+				go(index);
+				lightbox.showModal();
+			}),
+		);
+		for (const arrow of lightbox.querySelectorAll<HTMLElement>('[data-step]')) {
+			arrow.addEventListener('click', () => go(current + Number(arrow.dataset.step)));
+		}
+		lightbox.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowRight') go(current + 1);
+			if (e.key === 'ArrowLeft') go(current - 1);
+		});
+
+		let touchX = 0;
+		lightbox.addEventListener('touchstart', (e) => (touchX = e.touches[0].clientX), { passive: true });
+		lightbox.addEventListener('touchend', (e) => {
+			const moved = e.changedTouches[0].clientX - touchX;
+			if (Math.abs(moved) > 50) go(current + (moved < 0 ? 1 : -1));
+		});
+
+		// Close with the cross, Esc, or a click next to the image.
+		lightbox.querySelector('[data-close]')!.addEventListener('click', () => lightbox.close());
+		lightbox.addEventListener('click', (e) => e.target === lightbox && lightbox.close());
+		lightbox.addEventListener('close', () => image.removeAttribute('src'));
 	}
 </script>
 
@@ -67,16 +157,220 @@ const { images, label } = Astro.props;
 		cursor: grabbing;
 	}
 
-	.strip:focus-visible {
-		outline: 1px solid var(--color-fg);
-		outline-offset: 4px;
-	}
-
 	.strip__item {
 		flex: 0 0 auto;
-		width: auto;
-		height: clamp(10rem, 22vw, 22rem);
-		object-fit: cover;
+		padding: 0;
+		border: 0;
+		background: none;
+		cursor: zoom-in;
 		user-select: none;
+	}
+
+	.strip.is-dragging .strip__item {
+		cursor: grabbing;
+	}
+
+	.strip__item:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: -1px;
+	}
+
+	/* Every image in a row is equally tall. */
+	.strip__item img {
+		width: auto;
+		max-width: none;
+		height: clamp(8.5rem, 17vw, 17rem);
+		object-fit: cover;
+		transition: opacity 0.2s ease;
+	}
+
+	.strip__item:hover img {
+		opacity: 0.8;
+	}
+
+	/* A wall of images in columns, each at its own proportions. */
+	.strip--wall {
+		display: block;
+		columns: 5;
+		column-gap: clamp(0.5rem, 1vw, 1rem);
+		margin-right: 0;
+		padding-right: 0;
+		overflow: visible;
+		cursor: auto;
+	}
+
+	.strip--wall .strip__item {
+		display: block;
+		width: 100%;
+		margin-bottom: clamp(0.5rem, 1vw, 1rem);
+		break-inside: avoid;
+	}
+
+	.strip--wall .strip__item img {
+		width: 100%;
+		height: auto;
+	}
+
+	@media (max-width: 1000px) {
+		.strip--wall {
+			columns: 3;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.strip--wall {
+			columns: 2;
+		}
+	}
+
+	/* The popup: the image between two arrows, with the count and caption underneath. */
+	.lightbox {
+		width: 100vw;
+		max-width: none;
+		height: 100dvh;
+		max-height: none;
+		margin: 0;
+		padding: clamp(3.5rem, 6vw, 4.5rem) var(--gutter) clamp(1rem, 2.5vw, 2rem);
+		border: 0;
+		background: rgb(0 0 0 / 0.93);
+		color: var(--color-fg);
+		grid-template: 'prev image next' minmax(0, 1fr) '. info .' auto / auto minmax(0, 1fr) auto;
+		gap: clamp(1rem, 2vw, 1.75rem) clamp(1rem, 3vw, 3rem);
+		align-items: center;
+	}
+
+	.lightbox[open] {
+		display: grid;
+		animation: lightbox-in 0.25s ease;
+	}
+
+	.lightbox::backdrop {
+		background: none;
+	}
+
+	@keyframes lightbox-in {
+		from { opacity: 0; }
+	}
+
+	:global(html:has(dialog[open])) {
+		overflow: hidden;
+	}
+
+	.lightbox__image {
+		grid-area: image;
+		place-self: center;
+		width: auto;
+		max-width: 100%;
+		height: auto;
+		max-height: 100%;
+	}
+
+	.lightbox__arrow,
+	.lightbox__close {
+		display: grid;
+		place-items: center;
+		padding: 0;
+		border: 1.5px solid var(--color-fg);
+		background: var(--color-bg);
+		color: var(--color-fg);
+		cursor: pointer;
+		transition: color 0.2s ease, border-color 0.2s ease;
+	}
+
+	.lightbox__arrow {
+		width: clamp(3rem, 5vw, 4.25rem);
+		aspect-ratio: 1;
+	}
+
+	.lightbox__arrow--prev {
+		grid-area: prev;
+	}
+
+	.lightbox__arrow--next {
+		grid-area: next;
+	}
+
+	.lightbox__arrow--prev svg {
+		scale: -1 1;
+	}
+
+	.lightbox[data-single] .lightbox__arrow,
+	.lightbox[data-single] .lightbox__count {
+		visibility: hidden;
+	}
+
+	.lightbox__close {
+		position: absolute;
+		top: clamp(0.75rem, 1.5vw, 1.25rem);
+		right: var(--gutter);
+		width: 2.5rem;
+		aspect-ratio: 1;
+	}
+
+	.lightbox svg {
+		width: 55%;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.5;
+		transition: translate 0.3s ease;
+	}
+
+	.lightbox__arrow:hover,
+	.lightbox__arrow:focus-visible,
+	.lightbox__close:hover,
+	.lightbox__close:focus-visible {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		outline: none;
+	}
+
+	.lightbox__arrow--next:hover svg {
+		translate: 0.2rem 0;
+	}
+
+	.lightbox__arrow--prev:hover svg {
+		translate: -0.2rem 0;
+	}
+
+	.lightbox__info {
+		grid-area: info;
+		display: grid;
+		gap: 0.4rem;
+		justify-items: center;
+		text-align: center;
+	}
+
+	.lightbox__info p {
+		margin: 0;
+	}
+
+	.lightbox__count {
+		font-family: var(--font-hand);
+		font-size: 1.1rem;
+	}
+
+	.lightbox__caption {
+		max-width: 44rem;
+		font-size: clamp(0.95rem, 1.15vw, 1.15rem);
+		font-weight: 300;
+		line-height: 1.35;
+		letter-spacing: -0.02em;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.lightbox[open] {
+			animation: none;
+		}
+	}
+
+	/* On phones the image gets the full width and the arrows move underneath. */
+	@media (max-width: 640px) {
+		.lightbox {
+			grid-template: 'image image' minmax(0, 1fr) 'info info' auto 'prev next' auto / 1fr 1fr;
+		}
+
+		.lightbox__arrow--prev {
+			justify-self: end;
+		}
 	}
 </style>

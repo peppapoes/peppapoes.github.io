@@ -1,39 +1,42 @@
 ---
-/** App-style tile for a tool used in a project. */
-import type { Tool } from '../../data/projects';
+/** App-style tile for a tool: two letters on a colour, or a small drawing (see src/data/tools.ts). */
+import { tools, type Tool } from '../../data/tools';
 
 interface Props {
 	tool: Tool;
 }
 
-const tools: Record<Tool, { name: string; short: string; bg: string; fg: string }> = {
-	'after-effects': { name: 'After Effects', short: 'Ae', bg: '#00005b', fg: '#9999ff' },
-	photoshop: { name: 'Photoshop', short: 'Ps', bg: '#001e36', fg: '#31a8ff' },
-	illustrator: { name: 'Illustrator', short: 'Ai', bg: '#330000', fg: '#ff9a00' },
-	indesign: { name: 'InDesign', short: 'Id', bg: '#49021f', fg: '#ff3366' },
-	figma: { name: 'Figma', short: 'Fg', bg: '#1e1e1e', fg: '#ffffff' },
-};
-
-const { name, short, bg, fg } = tools[Astro.props.tool];
+const tile = tools[Astro.props.tool];
 ---
 
-<li class="tool" style={`--bg: ${bg}; --fg: ${fg}`} title={name}>
-	<span aria-hidden="true">{short}</span>
-	<span class="visually-hidden">{name}</span>
+<li class="tool" style={`--bg: ${tile.bg}; --fg: ${'fg' in tile ? tile.fg : 'inherit'}`} title={tile.name}>
+	{'svg' in tile
+		? <svg viewBox="0 0 48 48" aria-hidden="true" set:html={tile.svg} />
+		: <span aria-hidden="true">{tile.short}</span>}
+	<span class="visually-hidden">{tile.name}</span>
 </li>
 
 <style>
+	/* Set --tool-size on a parent to change the size of its tiles. */
 	.tool {
+		--size: var(--tool-size, clamp(3.5rem, 5.2vw, 4.75rem));
 		display: grid;
+		flex: 0 0 auto;
 		place-items: center;
-		width: clamp(3.5rem, 5.2vw, 4.75rem);
+		width: var(--size);
 		aspect-ratio: 1;
+		overflow: hidden;
 		border-radius: 18%;
 		background: var(--bg);
 		color: var(--fg);
-		font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+		font-size: calc(var(--size) * 0.5);
 		font-weight: 700;
 		letter-spacing: -0.02em;
+	}
+
+	.tool svg {
+		width: 100%;
+		height: 100%;
 	}
 
 	.visually-hidden {

@@ -2,8 +2,8 @@
 /**
  * Card previewing one project, shown when hovering a tag in the hero: the tag's
  * label as heading, the preview image and a few handwritten lines, all in one
- * selection frame that links to the project. The hero animates the frame's size;
- * the body fades in once it's open (`data-expanded` on the hero item).
+ * selection frame that links to the project. Every preview has exactly the same
+ * size; the hero fades it in over its tag.
  */
 import { Image } from 'astro:assets';
 import SelectionFrame from '../SelectionFrame.astro';
@@ -62,32 +62,11 @@ const { id, heading, project } = Astro.props;
 		color: var(--color-fg);
 		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
 		text-decoration: none;
-		transition:
-			width 0.5s cubic-bezier(0.65, 0, 0.35, 1),
-			height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
 	}
 
-	/* Everything but the heading fades in once the frame has (mostly) opened. */
 	.preview__body {
 		display: grid;
 		gap: 0.7rem;
-		opacity: 0;
-		pointer-events: none;
-		transition: opacity 0.2s ease;
-	}
-
-	:global([data-expanded]) .preview__body {
-		opacity: 1;
-		pointer-events: auto;
-		transition: opacity 0.35s ease 0.3s;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.preview,
-		.preview__body,
-		:global([data-expanded]) .preview__body {
-			transition: none;
-		}
 	}
 
 	.preview:focus-visible {
@@ -104,6 +83,9 @@ const { id, heading, project } = Astro.props;
 	.preview__image {
 		width: calc(100% - 2 * var(--inset));
 		height: auto;
+		/* Every image is cropped to the same shape, so every frame is equally tall. */
+		aspect-ratio: 3 / 2;
+		object-fit: cover;
 		margin-inline: var(--inset);
 		filter: grayscale(1); /* previews are always black & white */
 		transition: scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -124,8 +106,16 @@ const { id, heading, project } = Astro.props;
 	.preview__meta {
 		display: grid;
 		gap: 0.2rem;
+		min-width: 0;
 		font-family: var(--font-hand);
 		font-size: 0.95rem;
+	}
+
+	/* One line each, so a long title can't make the frame taller. */
+	.preview__meta span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.preview__arrow {

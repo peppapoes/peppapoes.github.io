@@ -1,7 +1,7 @@
 ---
 /**
- * Pink intro card that opens out of the "My portfolio" tag in the hero, the same
- * way ProjectPreview opens out of the other tags (see the hero's open()).
+ * Pink intro card that fades in over the "My portfolio" tag in the hero, the same
+ * way ProjectPreview does over the other tags (see the hero's open()).
  */
 import SelectionFrame from '../SelectionFrame.astro';
 
@@ -31,9 +31,6 @@ const { heading } = Astro.props;
 		padding: 0.35em 0.5em 1.75rem;
 		background: var(--color-bg);
 		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
-		transition:
-			width 0.5s cubic-bezier(0.65, 0, 0.35, 1),
-			height 0.5s cubic-bezier(0.65, 0, 0.35, 1);
 	}
 
 	/* The tag sits on the right, so the card opens to the left and the heading
@@ -52,21 +49,6 @@ const { heading } = Astro.props;
 		font-size: clamp(1rem, 1.3vw, 1.2rem);
 		line-height: 1.35;
 		letter-spacing: 0.02em;
-		opacity: 0;
-		transition: opacity 0.2s ease;
-	}
-
-	:global([data-expanded]) .intro__body {
-		opacity: 1;
-		transition: opacity 0.35s ease 0.3s;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.intro,
-		.intro__body,
-		:global([data-expanded]) .intro__body {
-			transition: none;
-		}
 	}
 
 	/* On phones the tag stays above the card, so the heading would be doubled. */
