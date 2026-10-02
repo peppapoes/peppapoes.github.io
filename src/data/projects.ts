@@ -70,8 +70,9 @@ export interface Project {
 	gallery?: ProjectImage[];
 	/** "Process" tab: per step an optional text and a scrollable row of images. */
 	process?: { title: string; text?: string; images: ProjectImage[] }[];
-	/** "End result" tab on the project page. */
+	/** "End result" tab on the project page: a video and/or rows of images, like the process steps. */
 	video?: string;
+	results?: { title: string; text?: string; images: ProjectImage[] }[];
 	/** "Inspiration" tab: a wall of images in columns. */
 	inspiration?: ProjectImage[];
 }
@@ -151,6 +152,10 @@ export const projects: Project[] = [
 			{ title: 'Try-outs', text: 'Placeholder: a short description of the try-outs comes here.', images: folder('type01-tryouts', 'Type01 try-out') },
 		],
 		inspiration: folder('type01-inspiration', 'Type01 inspiration'),
+		results: [
+			{ title: 'Desktop', images: folder('type01-desktopresults', 'Type01 website on desktop, screen') },
+			{ title: 'Mobile', images: folder('type01-mobileresults', 'Type01 website on mobile, screen') },
+		],
 	},
 	{
 		slug: 'beyond-brewing',

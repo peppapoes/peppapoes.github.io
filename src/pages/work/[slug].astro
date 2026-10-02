@@ -29,8 +29,8 @@ const hasText = Boolean(project.assignment || project.idea?.length);
 // underneath (and closes it again). Topics without content yet say so.
 const tabs = [
 	{ id: 'process', label: 'Process' },
-	{ id: 'end-result', label: 'End result' },
 	{ id: 'inspiration', label: 'Inspiration' },
+	{ id: 'end-result', label: 'End result' },
 ];
 // Panel ids differ from the URL hash (#process), so opening a tab from a link doesn't scroll the page.
 const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab-${id}`, hidden: true });
@@ -109,23 +109,31 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 				: <p class="project__soon">more coming soon!</p>}
 		</section>
 
-		<section class="result" {...panelAttrs('end-result')}>
-			{project.video
-				? <video
-						class="result__video"
-						src={`${project.video}#t=0.1`}
-						controls
-						playsinline
-						preload="metadata"
-						aria-label={`${project.title} video`}
-					/>
-				: <p class="project__soon">more coming soon!</p>}
-		</section>
-
 		<section class="inspiration" {...panelAttrs('inspiration')}>
 			{project.inspiration?.length
 				? <ImageStrip images={project.inspiration} label="Inspiration images" layout="wall" />
 				: <p class="project__soon">more coming soon!</p>}
+		</section>
+
+		<section class="result" {...panelAttrs('end-result')}>
+			{project.video && (
+				<video
+					class="result__video"
+					src={`${project.video}#t=0.1`}
+					controls
+					playsinline
+					preload="metadata"
+					aria-label={`${project.title} video`}
+				/>
+			)}
+			{project.results?.map(({ title, text, images }) => (
+				<section class="step">
+					<h2 class="step__title">{title}</h2>
+					<ImageStrip images={images} label={`${title} images`} caption={text} />
+					{text && <p class="step__text">{text}</p>}
+				</section>
+			))}
+			{!project.video && !project.results?.length && <p class="project__soon">more coming soon!</p>}
 		</section>
 
 		{project.tools?.length ? (
@@ -331,7 +339,8 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 	}
 
 
-	.step + .step {
+	.step + .step,
+	.result__video + .step {
 		margin-top: clamp(2.5rem, 5vw, 4.5rem);
 	}
 

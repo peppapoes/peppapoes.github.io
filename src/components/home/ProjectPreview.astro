@@ -136,12 +136,16 @@ const { id, heading, project, end = false } = Astro.props;
 		aspect-ratio: 3 / 2;
 		object-fit: cover;
 		margin-inline: var(--inset);
-		filter: grayscale(1); /* previews are always black & white */
-		transition: scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+		filter: grayscale(1); /* previews are black & white, and in colour under the mouse */
+		transition: scale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.35s ease;
 	}
 
 	.preview:hover .preview__image {
 		scale: 1.02;
+	}
+
+	.preview__image:hover {
+		filter: none;
 	}
 
 	.preview__info {
