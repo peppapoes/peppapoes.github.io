@@ -6,7 +6,7 @@ import strip from '../../assets/images/polaroid-strip.png';
 /**
  * Polaroid strip with a handwritten caption per frame, and optionally a photo in it.
  * The captions sit on the bottom of their frame, or with `callouts` beside the strip,
- * each at the end of a pink line that starts in its photo (on phones they stay on the frames).
+ * each at the end of a pink line that starts in its photo.
  */
 interface Props {
 	captions: string[];
@@ -112,45 +112,65 @@ const calloutAt = ({ x, y }: { x: number; y: number }) => `--line-x: ${(flip ? 1
 	}
 
 	/* Callouts: a pink line from the photo to a dot, with the caption after it. */
-	@media (min-width: 801px) {
+	.strip--callouts {
+		--line: 70cqi; /* how long the line is */
+		--line-gap: 6cqi; /* between the dot and the caption */
+	}
+
+	.strip--callouts .strip__caption {
+		top: var(--line-y);
+		left: var(--line-x);
+		display: flex;
+		align-items: center;
+		gap: var(--line-gap);
+		width: max-content;
+		translate: 0 -50%;
+		rotate: none;
+		font-size: clamp(0.85rem, 1.05vw, 1.05rem);
+		letter-spacing: 0.04em;
+		text-shadow: none;
+	}
+
+	.strip--callouts .strip__caption > span:last-child {
+		max-width: 12.5em;
+		text-wrap: balance;
+	}
+
+	.strip--callouts .strip__line {
+		position: relative;
+		display: block;
+		flex: 0 0 auto;
+		width: var(--line);
+		height: 1.5px;
+		background: var(--color-accent);
+	}
+
+	.strip--callouts .strip__line::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		right: 0;
+		width: 0.7em;
+		aspect-ratio: 1;
+		border-radius: 50%;
+		background: var(--color-accent);
+		translate: 50% -50%;
+	}
+
+	/* On phones there's less room beside the strip: shorter lines and narrower captions. */
+	@media (max-width: 800px) {
+		.strip--callouts {
+			--line: 22cqi;
+			--line-gap: 4cqi;
+		}
+
 		.strip--callouts .strip__caption {
-			top: var(--line-y);
-			left: var(--line-x);
-			display: flex;
-			align-items: center;
-			gap: 6cqi;
-			width: max-content;
-			translate: 0 -50%;
-			rotate: none;
-			font-size: clamp(0.85rem, 1.05vw, 1.05rem);
-			letter-spacing: 0.04em;
-			text-shadow: none;
+			font-size: 0.8rem;
+			letter-spacing: 0.02em;
 		}
 
 		.strip--callouts .strip__caption > span:last-child {
-			max-width: 12.5em;
-			text-wrap: balance;
-		}
-
-		.strip--callouts .strip__line {
-			position: relative;
-			display: block;
-			flex: 0 0 auto;
-			width: 70cqi;
-			height: 1.5px;
-			background: var(--color-accent);
-		}
-
-		.strip--callouts .strip__line::after {
-			content: '';
-			position: absolute;
-			top: 50%;
-			right: 0;
-			width: 0.7em;
-			aspect-ratio: 1;
-			border-radius: 50%;
-			background: var(--color-accent);
-			translate: 50% -50%;
+			max-width: min(7.6em, 30cqi);
 		}
 	}
 </style>

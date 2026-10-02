@@ -432,6 +432,17 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		}
 	}
 
+	/* On phones the tab labels (with their stars) have to fit between the lines. */
+	@media (max-width: 640px) {
+		.tabs__tab {
+			gap: 0.3em;
+			padding-inline: 0;
+			font-size: clamp(0.75rem, 3.9vw, 1.2rem);
+			letter-spacing: -0.05em;
+			white-space: nowrap;
+		}
+	}
+
 	@media (max-width: 800px) {
 		.overview {
 			grid-template: 'heading' 'media' 'info' / minmax(0, 1fr);
