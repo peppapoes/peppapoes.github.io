@@ -38,7 +38,7 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 </header>
 
 <!-- Full-screen menu on phones. -->
-<dialog class="menu" id="menu" aria-label="Menu">
+<dialog class="menu" id="menu" aria-label="Menu" tabindex="-1">
 	<div class="menu__top">
 		<a href="/" class="logo" aria-label="FDSGNS — home">
 			{letters.map((letter, i) => <span class="logo__letter" style={`--i: ${i}`} aria-hidden="true">{letter}</span>)}
@@ -72,7 +72,12 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 
 <script>
 	const menu = document.querySelector<HTMLDialogElement>('#menu')!;
-	document.querySelector('[data-menu-open]')?.addEventListener('click', () => menu.showModal());
+	document.querySelector('[data-menu-open]')?.addEventListener('click', () => {
+		menu.showModal();
+		// A dialog focuses its first link when it opens, which would be the logo (with a
+		// focus ring and its hover animation); keep the focus on the menu itself instead.
+		menu.focus();
+	});
 	document.querySelector('[data-menu-close]')?.addEventListener('click', () => menu.close());
 	menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => menu.close()));
 	// The menu is phone-only; close it if the screen grows past that.
@@ -169,6 +174,10 @@ const isCurrent = (href: string) => current === href || current.startsWith(`${hr
 		border: 0;
 		background: var(--color-bg);
 		color: var(--color-fg);
+	}
+
+	.menu:focus {
+		outline: none;
 	}
 
 	.menu[open] {
