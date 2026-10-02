@@ -54,7 +54,7 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 						<>
 							<SelectionTag href={projectUrl(project)}>{label}</SelectionTag>
 							<div class:list={panelClass}>
-								<ProjectPreview id={`preview-${category}`} heading={label} project={project} />
+								<ProjectPreview id={`preview-${category}`} heading={label} project={project} end={x > 60} />
 							</div>
 						</>
 					) : intro ? (
@@ -109,7 +109,7 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 		const SCREEN_MARGIN = 24; // keep this much room below an opened card
 		const HEADER_SPACE = 96; // and never lift a tag behind the header
-		const CLOSE_DURATION = reducedMotion ? 0 : 200; // matches the card's fade
+		const CLOSE_DURATION = reducedMotion ? 0 : 600; // matches the card's size transition
 		const closing = new Map<HTMLElement, number>();
 
 		// Low tags would open their card below the fold: lift the tag and card up
@@ -171,31 +171,62 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 			}
 		};
 
-		// The card appears over its tag, always at its one fixed size: data-open puts it
-		// in place and data-expanded fades it in. Closing fades it out, then removes it.
+		// The card replaces its tag at exactly the tag's size, then its frame is pulled
+		// open to the card's one fixed size while the content fades in (data-expanded).
+		// Closing runs backwards.
 		const open = (item: HTMLElement) => {
 			const card = item.querySelector<HTMLElement>('[data-card]');
-			if (!card) return;
+			const tag = item.querySelector<HTMLElement>('.tag');
+			if (!card || !tag) return;
 			clearTimeout(closing.get(item));
-			item.setAttribute('data-open', '');
-			if (!phone.matches) {
-				lift(item, card.offsetHeight);
-				makeRoom(item); // also makes sure the fade starts from invisible
+			if (phone.matches) {
+				card.style.width = card.style.height = '';
+				item.setAttribute('data-open', '');
+				item.setAttribute('data-expanded', '');
+				return;
 			}
+
+			const from = item.hasAttribute('data-open')
+				? { width: card.offsetWidth, height: card.offsetHeight } // reopened while closing
+				: { width: tag.offsetWidth, height: tag.offsetHeight };
+			item.setAttribute('data-open', '');
+
+			// Measure the full size, make room for it, then open up to it from the starting size.
+			card.style.transition = 'none';
+			card.style.width = card.style.height = '';
+			const to = { width: card.offsetWidth, height: card.offsetHeight };
+			lift(item, to.height);
+			makeRoom(item);
+			card.style.width = `${from.width}px`;
+			card.style.height = `${from.height}px`;
+			card.getBoundingClientRect();
+			card.style.transition = '';
+			card.style.width = `${to.width}px`;
+			card.style.height = `${to.height}px`;
 			item.setAttribute('data-expanded', '');
 		};
 
 		const close = (item: HTMLElement) => {
-			if (!item.hasAttribute('data-expanded')) return;
+			const card = item.querySelector<HTMLElement>('[data-card]');
+			const tag = item.querySelector<HTMLElement>('.tag');
+			if (!card || !tag || !item.hasAttribute('data-expanded')) return;
 			item.removeAttribute('data-expanded');
 			if (phone.matches) {
 				item.removeAttribute('data-open');
 				return;
 			}
 
+			card.style.width = `${tag.offsetWidth}px`;
+			card.style.height = `${tag.offsetHeight}px`;
 			item.style.setProperty('--lift', '0px');
 			if (!items.some((other) => other.hasAttribute('data-expanded'))) makeRoom(null);
-			closing.set(item, window.setTimeout(() => item.removeAttribute('data-open'), CLOSE_DURATION));
+			closing.set(
+				item,
+				window.setTimeout(() => {
+					item.removeAttribute('data-open');
+					card.style.width = card.style.height = '';
+				}, CLOSE_DURATION),
+			);
 		};
 
 		const show = (item: HTMLElement | null) => items.forEach((other) => (other === item ? open(other) : close(other)));
@@ -253,7 +284,7 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 	.float__inner {
 		translate: 0 calc(-1 * var(--lift, 0px));
-		transition: translate 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+		transition: translate 0.6s cubic-bezier(0.6, 0, 0.2, 1);
 		animation: bob var(--bob-duration) var(--bob-delay) ease-in-out infinite alternate;
 	}
 
@@ -271,19 +302,14 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 		to { transform: translateY(6px) rotate(8deg); }
 	}
 
-	/* The card sits exactly on top of its tag and fades in over it (see open() above). */
+	/* The card opens out of its tag: it sits exactly on top of it and takes over
+	   (see open() above), so it only needs to appear and disappear here. */
 	.float__panel {
 		position: absolute;
 		top: 0;
 		left: 0;
 		visibility: hidden;
-		opacity: 0;
 		pointer-events: none;
-		transition: opacity 0.2s ease;
-	}
-
-	.float[data-expanded] .float__panel {
-		opacity: 1;
 	}
 
 	/* Tags on the right open towards the left, so the card stays on screen. */
@@ -297,9 +323,8 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 		pointer-events: auto;
 	}
 
-	.float[data-expanded] :global(.tag) {
+	.float[data-open] :global(.tag) {
 		opacity: 0;
-		transition: opacity 0.2s ease;
 	}
 
 	.visually-hidden {
@@ -313,9 +338,7 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 	@media (prefers-reduced-motion: reduce) {
 		.float,
-		.float__inner,
-		.float__panel,
-		.float[data-expanded] :global(.tag) {
+		.float__inner {
 			transition: none;
 		}
 
@@ -377,12 +400,10 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 		.float[data-open] .float__panel {
 			display: block;
-			opacity: 1;
-			transition: none;
 			animation: card-in 0.35s ease;
 		}
 
-		.float[data-expanded] :global(.tag) {
+		.float[data-open] :global(.tag) {
 			opacity: 1;
 		}
 

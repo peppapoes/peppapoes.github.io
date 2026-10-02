@@ -2,17 +2,24 @@
 import Layout from '../layouts/Layout.astro';
 import Hero from '../components/home/Hero.astro';
 import WordCloud from '../components/home/WordCloud.astro';
+import WorkMarquee from '../components/home/WorkMarquee.astro';
+import WhatIDo from '../components/home/WhatIDo.astro';
+import SocialsInvite from '../components/SocialsInvite.astro';
 ---
 
 <Layout>
 	<Hero />
 	<WordCloud />
-	<!-- Open space, kept free for what comes here later. -->
-	<div class="open-space" aria-hidden="true"></div>
+	<WorkMarquee />
+	<WhatIDo />
+	<div class="socials">
+		<SocialsInvite centered />
+	</div>
 </Layout>
 
 <style>
-	.open-space {
-		height: clamp(14rem, 36vw, 34rem);
+	.socials {
+		margin: 0 var(--gutter);
+		padding-block: clamp(1rem, 2vw, 2rem) clamp(6rem, 13vw, 12rem);
 	}
 </style>

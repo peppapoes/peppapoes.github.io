@@ -106,11 +106,13 @@ const { project } = Astro.props;
 			grid-row: 1;
 		}
 
+		/* A flat, wide crop, so each project takes up less height. */
 		.row__image {
 			grid-column: 1 / -1;
 			grid-row: 2;
 			width: 100%;
 			min-width: 0;
+			aspect-ratio: 5 / 2;
 		}
 	}
 </style>

@@ -1,0 +1,151 @@
+---
+/**
+ * A band with the preview of every project that slowly slides past: black & white,
+ * in colour under the mouse, each one a link to its project. The previews are in
+ * the page four times over, so the band fills the widest screen and loops without a seam.
+ */
+import { Image } from 'astro:assets';
+import { categoryLabels, projects, projectUrl } from '../../data/projects';
+
+const previews = projects.flatMap((project) => (project.preview ? [{ src: project.preview, project }] : []));
+// Two rows that follow each other, each holding every preview twice; only the very first set is for screen readers and the keyboard.
+const rows = [0, 1].map((row) => [0, 1].flatMap((set) => previews.map((preview) => ({ ...preview, copy: row + set > 0 }))));
+---
+
+<section class="marquee" aria-labelledby="marquee-heading">
+	<h2 class="marquee__heading" id="marquee-heading">A peek at my projects</h2>
+
+	<div class="marquee__band">
+		<div class="marquee__track">
+			{rows.map((row) => (
+				<ul class="marquee__row">
+					{row.map(({ src, project, copy }) => (
+						<li aria-hidden={copy ? 'true' : undefined}>
+							<a href={projectUrl(project)} tabindex={copy ? -1 : undefined}>
+								<Image src={src} alt="" height={480} width={Math.round((480 * src.width) / src.height)} loading="lazy" />
+								<span class="marquee__label">
+									<span class="marquee__category">{categoryLabels[project.category].toLowerCase()}</span>
+									<span class="marquee__title">{project.title}</span>
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			))}
+		</div>
+	</div>
+</section>
+
+<style>
+	.marquee {
+		--gap: clamp(0.5rem, 1vw, 1rem);
+		padding-block: clamp(3rem, 7vw, 7rem) clamp(1.5rem, 3.5vw, 3.5rem);
+	}
+
+	.marquee__heading {
+		margin: 0 var(--gutter) var(--subtitle-gap);
+		padding-left: 0.4rem;
+		font-family: var(--font-hand);
+		font-size: var(--text-subtitle);
+		font-weight: 400;
+		letter-spacing: 0.02em;
+	}
+
+	.marquee__band {
+		overflow: hidden;
+	}
+
+	.marquee__track {
+		display: flex;
+		width: max-content;
+		animation: slide 60s linear infinite;
+	}
+
+	/* Hovering (or tabbing into) the band stops it, so an image can be looked at and clicked. */
+	.marquee:hover .marquee__track,
+	.marquee:focus-within .marquee__track {
+		animation-play-state: paused;
+	}
+
+	@keyframes slide {
+		to { translate: -50% 0; }
+	}
+
+	.marquee__row {
+		display: flex;
+		gap: var(--gap);
+		margin: 0;
+		padding: 0 var(--gap) 0 0;
+		list-style: none;
+	}
+
+	.marquee a {
+		position: relative;
+		display: block;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.marquee a:focus-visible {
+		outline: 1px solid var(--color-fg);
+		outline-offset: -1px;
+	}
+
+	.marquee img {
+		width: auto;
+		max-width: none;
+		height: clamp(9rem, 17vw, 16rem);
+		filter: grayscale(1);
+		transition: filter 0.35s ease;
+	}
+
+	.marquee a:hover img,
+	.marquee a:focus-visible img {
+		filter: none;
+	}
+
+	/* The project's course and name show on the image under the mouse. */
+	.marquee__label {
+		position: absolute;
+		bottom: 0.6rem;
+		left: 0.7rem;
+		display: grid;
+		gap: 0.1rem;
+		padding: 0.3rem 0.65rem 0.45rem;
+		background: var(--color-bg);
+		opacity: 0;
+		transition: opacity 0.25s ease;
+	}
+
+	.marquee__category {
+		font-family: var(--font-hand);
+		font-size: 0.9rem;
+	}
+
+	.marquee__title {
+		font-size: 1.3rem;
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.05em;
+	}
+
+	.marquee a:hover .marquee__label,
+	.marquee a:focus-visible .marquee__label {
+		opacity: 1;
+	}
+
+	/* Without motion it's a row to scroll through by hand. */
+	@media (prefers-reduced-motion: reduce) {
+		.marquee__band {
+			overflow-x: auto;
+		}
+
+		.marquee__track {
+			animation: none;
+		}
+
+		.marquee__row li[aria-hidden] {
+			display: none;
+		}
+	}
+</style>

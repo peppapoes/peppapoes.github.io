@@ -3,7 +3,9 @@
  * Card previewing one project, shown when hovering a tag in the hero: the tag's
  * label as heading, the preview image and a few handwritten lines, all in one
  * selection frame that links to the project. Every preview has exactly the same
- * size; the hero fades it in over its tag.
+ * size. The hero pulls the frame open out of its tag (see its open()): only the
+ * frame changes size, the content inside keeps its full size and is uncovered,
+ * so nothing reflows while it opens.
  */
 import { Image } from 'astro:assets';
 import SelectionFrame from '../SelectionFrame.astro';
@@ -13,19 +15,23 @@ interface Props {
 	id: string;
 	heading: string;
 	project: Project;
+	/** For tags on the right: the frame opens towards the left, so the heading stays on the right. */
+	end?: boolean;
 }
 
-const { id, heading, project } = Astro.props;
+const { id, heading, project, end = false } = Astro.props;
 ---
 
 <SelectionFrame
 	as="a"
 	id={id}
-	class="preview"
+	class:list={['preview', { 'preview--end': end }]}
 	data-card
 	href={projectUrl(project)}
 	aria-label={`${heading}: view ${project.title}`}
 >
+	<span class="preview__clip">
+	<span class="preview__content">
 	<span class="preview__heading">{heading}</span>
 
 	<span class="preview__body">
@@ -45,6 +51,8 @@ const { id, heading, project } = Astro.props;
 		</svg>
 	</span>
 	</span>
+	</span>
+	</span>
 </SelectionFrame>
 
 <style>
@@ -53,20 +61,57 @@ const { id, heading, project } = Astro.props;
 	.preview {
 		--handle: 0.6em;
 		--inset: 1.1em; /* the image and text sit a bit further in than the heading */
-		display: grid;
-		align-content: start;
-		gap: 0.7rem;
-		width: min(20rem, 85vw);
-		padding: 0.35em 0.5em 1.1rem;
+		display: block;
+		width: fit-content;
 		background: var(--color-bg);
 		color: var(--color-fg);
 		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
 		text-decoration: none;
+		transition:
+			width 0.6s cubic-bezier(0.6, 0, 0.2, 1),
+			height 0.6s cubic-bezier(0.6, 0, 0.2, 1);
 	}
 
+	/* The frame is a window on the content, which always has its full size. */
+	.preview__clip {
+		display: flex;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	.preview--end .preview__clip {
+		justify-content: flex-end;
+	}
+
+	.preview__content {
+		display: grid;
+		flex: 0 0 auto;
+		align-content: start;
+		gap: 0.7rem;
+		width: min(20rem, 85vw);
+		padding: 0.35em 0.5em 1.1rem;
+	}
+
+	/* Everything but the heading fades in while the frame opens. */
 	.preview__body {
 		display: grid;
 		gap: 0.7rem;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	:global([data-expanded]) .preview__body {
+		opacity: 1;
+		transition: opacity 0.35s ease 0.3s;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.preview,
+		.preview__body,
+		:global([data-expanded]) .preview__body {
+			transition: none;
+		}
 	}
 
 	.preview:focus-visible {
@@ -78,6 +123,10 @@ const { id, heading, project } = Astro.props;
 		font-weight: 700;
 		letter-spacing: -0.05em;
 		white-space: nowrap;
+	}
+
+	.preview--end .preview__heading {
+		justify-self: end;
 	}
 
 	.preview__image {

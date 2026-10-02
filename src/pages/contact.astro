@@ -1,14 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SelectionFrame from '../components/SelectionFrame.astro';
+import SocialsInvite from '../components/SocialsInvite.astro';
 
 const phone = '0477 57 82 13';
 const email = 'fdelatter@gmail.com';
-
-const socials = [
-	{ label: 'Instagram', href: 'https://www.instagram.com/fdsgns/' },
-	{ label: 'Behance', href: 'https://www.behance.net/femkedelatter' },
-];
 ---
 
 <Layout title="Contact — FDSGNS" description="Get in touch with Femke De Latter: by phone, by email or on social media.">
@@ -38,12 +34,7 @@ const socials = [
 		</div>
 
 		<div class="contact__socials">
-			<p class="contact__more">Can’t get enough? My social media accounts are full of it too!</p>
-			<ul>
-				{socials.map(({ label, href }) => (
-					<li><a class="contact__button" href={href} target="_blank" rel="noopener noreferrer">{label}</a></li>
-				))}
-			</ul>
+			<SocialsInvite />
 		</div>
 	</div>
 </Layout>
@@ -88,13 +79,13 @@ const socials = [
 
 	.contact__info section {
 		display: grid;
-		gap: clamp(0.5rem, 1vw, 0.9rem);
+		gap: var(--subtitle-gap);
 	}
 
 	.contact__label {
 		margin: 0;
 		font-family: var(--font-hand);
-		font-size: clamp(1.5rem, 2.1vw, 2rem);
+		font-size: var(--text-subtitle);
 		font-weight: 400;
 		letter-spacing: 0.02em;
 	}
@@ -102,10 +93,10 @@ const socials = [
 	.contact__info p {
 		max-width: 40rem;
 		margin: 0;
-		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		font-size: var(--text-body);
 		font-weight: 300;
-		line-height: 1.3;
-		letter-spacing: -0.03em;
+		line-height: 1.35;
+		letter-spacing: -0.02em;
 	}
 
 	.contact__info a {
@@ -118,55 +109,12 @@ const socials = [
 		color: var(--color-accent);
 	}
 
-	/* Below the line: an invitation and a button per social account. */
+	/* Below the line: the invitation to her social media. */
 	.contact__socials {
 		grid-column: 1 / -1;
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1.5rem 2rem;
 		margin-top: clamp(2rem, 3.5vw, 3.5rem);
 		padding-top: clamp(1.5rem, 2.4vw, 2.25rem);
 		border-top: 1.5px solid var(--color-fg);
-	}
-
-	.contact__more {
-		margin: 0;
-		font-family: var(--font-hand);
-		font-size: clamp(1.15rem, 1.6vw, 1.5rem);
-		letter-spacing: 0.02em;
-	}
-
-	.contact__socials ul {
-		display: flex;
-		flex-wrap: wrap;
-		gap: clamp(0.75rem, 1.7vw, 1.6rem);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.contact__button {
-		display: grid;
-		place-items: center;
-		min-width: clamp(9rem, 17vw, 16rem);
-		padding: 0.85em 1.5em 0.75em;
-		border: 1.5px solid var(--color-fg);
-		font-size: clamp(1rem, 1.6vw, 1.5rem);
-		font-weight: 500;
-		letter-spacing: -0.04em;
-		text-decoration: none;
-		text-transform: uppercase;
-		transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-	}
-
-	.contact__button:hover,
-	.contact__button:focus-visible {
-		border-color: var(--color-accent);
-		background: var(--color-accent);
-		color: var(--color-bg);
-		outline: none;
 	}
 
 	@media (max-width: 800px) {
@@ -181,15 +129,6 @@ const socials = [
 
 		.contact__socials {
 			margin-top: 0;
-		}
-
-		.contact__socials ul,
-		.contact__socials li {
-			flex: 1 1 auto;
-		}
-
-		.contact__button {
-			min-width: 0;
 		}
 	}
 </style>

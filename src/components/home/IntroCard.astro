@@ -1,7 +1,7 @@
 ---
 /**
- * Pink intro card that fades in over the "My portfolio" tag in the hero, the same
- * way ProjectPreview does over the other tags (see the hero's open()).
+ * Pink intro card that opens out of the "My portfolio" tag in the hero, the same
+ * way ProjectPreview opens out of the other tags (see the hero's open()).
  */
 import SelectionFrame from '../SelectionFrame.astro';
 
@@ -13,24 +13,47 @@ const { heading } = Astro.props;
 ---
 
 <SelectionFrame accent class="intro" data-card>
-	<span class="intro__heading">{heading}</span>
-	<p class="intro__body">
-		Hi, my name is Femke De Latter, 23 years old and Devine student by heart. Welcome to my portfolio where I
-		showcase all my projects I’m proud of. Hopefully you feel inspired by my work and don’t hesitate to contact&nbsp;me!
-	</p>
+	<div class="intro__clip">
+		<div class="intro__content">
+			<span class="intro__heading">{heading}</span>
+			<p class="intro__body">
+				Hi, my name is Femke De Latter, 23 years old and Devine student by heart. Welcome to my portfolio where I
+				showcase all my projects I’m proud of. Hopefully you feel inspired by my work and don’t hesitate to
+				contact&nbsp;me!
+			</p>
+		</div>
+	</div>
 </SelectionFrame>
 
 <style>
 	/* Same font size, padding and handles as the tag, so the heading stays put. */
 	.intro {
 		--handle: 0.6em;
+		width: fit-content;
+		background: var(--color-bg);
+		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
+		transition:
+			width 0.6s cubic-bezier(0.6, 0, 0.2, 1),
+			height 0.6s cubic-bezier(0.6, 0, 0.2, 1);
+	}
+
+	/* The frame is a window on the content, which keeps its full size (and its line
+	   breaks) while the frame opens. It opens to the left, so the content hangs on the right. */
+	.intro__clip {
+		display: flex;
+		justify-content: flex-end;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	.intro__content {
 		display: grid;
+		flex: 0 0 auto;
 		align-content: start;
 		gap: 1.1rem;
 		width: min(27rem, 85vw);
 		padding: 0.35em 0.5em 1.75rem;
-		background: var(--color-bg);
-		font-size: clamp(0.85rem, 1.35vw, 1.3rem);
 	}
 
 	/* The tag sits on the right, so the card opens to the left and the heading
@@ -50,6 +73,21 @@ const { heading } = Astro.props;
 		line-height: 1.35;
 		letter-spacing: 0.02em;
 		text-wrap: pretty; /* no single word alone on the last line */
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	:global([data-expanded]) .intro__body {
+		opacity: 1;
+		transition: opacity 0.35s ease 0.3s;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.intro,
+		.intro__body,
+		:global([data-expanded]) .intro__body {
+			transition: none;
+		}
 	}
 
 	/* On phones the tag stays above the card, so the heading would be doubled. */

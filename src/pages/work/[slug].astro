@@ -336,18 +336,19 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 	}
 
 	.step__title {
-		margin: 0 0 1rem;
+		margin: 0 0 var(--subtitle-gap);
 		padding-left: 0.4rem;
 		font-family: var(--font-hand);
-		font-size: 1rem;
+		font-size: var(--text-subtitle);
 		font-weight: 400;
+		letter-spacing: 0.02em;
 	}
 
 	.step__text {
 		max-width: 38rem;
-		margin: 1.5rem 0 0;
+		margin: 1.25rem 0 0;
 		padding-left: 0.4rem;
-		font-size: clamp(1rem, 1.35vw, 1.3rem);
+		font-size: var(--text-body);
 		font-weight: 300;
 		line-height: 1.35;
 		letter-spacing: -0.02em;
@@ -370,19 +371,20 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 	.project__info section {
 		display: grid;
-		gap: 0.6rem;
+		gap: var(--subtitle-gap);
 	}
 
 	.project__label {
 		margin: 0;
 		font-family: var(--font-hand);
-		font-size: 1.1rem;
+		font-size: var(--text-subtitle);
 		font-weight: 400;
+		letter-spacing: 0.02em;
 	}
 
 	.project__info p {
 		margin: 0;
-		font-size: clamp(0.95rem, 1.15vw, 1.15rem);
+		font-size: var(--text-body);
 		font-weight: 300;
 		line-height: 1.35;
 		letter-spacing: -0.02em;
@@ -394,7 +396,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 	.project__tools {
 		display: grid;
-		gap: 0.8rem;
+		gap: var(--subtitle-gap);
 		margin-top: clamp(3rem, 6vw, 5rem);
 		padding-left: 0.4rem;
 	}
