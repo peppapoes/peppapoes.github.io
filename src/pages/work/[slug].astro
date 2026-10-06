@@ -60,7 +60,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 					{images.map(({ src, alt }) => (
 						<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
 					))}
-					{project.website && <VisitLink href={project.website} />}
+					{project.website && <VisitLink href={project.website} label={project.websiteLabel} />}
 				</SelectionFrame>
 			)}
 
@@ -110,14 +110,20 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 						</section>
 					))
 				: <p class="project__soon">more coming soon!</p>}
+			{project.processLink && (
+				<div class="result__visit">
+					<VisitLink href={project.processLink} label="view full process" />
+				</div>
+			)}
 		</section>
 
 		<section class="inspiration" {...panelAttrs('inspiration')}>
-			{project.inspiration?.length
+			{project.inspiration?.length || project.inspirationCollage
 				? <ImageStrip
-						images={project.inspiration}
+						images={project.inspiration ?? []}
 						label="Inspiration images"
 						layout={project.inspirationFeature || project.inspirationPalette ? 'board' : 'wall'}
+						collage={project.inspirationCollage}
 						feature={project.inspirationFeature}
 						palette={project.inspirationPalette}
 					/>
@@ -125,7 +131,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		</section>
 
 		<section class="result" {...panelAttrs('end-result')}>
-			{project.video && (
+			{project.video && !project.videoLast && (
 				<section class="step step--video">
 					{project.videoTitle && <h2 class="step__title">{project.videoTitle}</h2>}
 					<video
@@ -139,16 +145,30 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 					{project.videoText && <p class="step__text">{project.videoText}</p>}
 				</section>
 			)}
-			{project.results?.map(({ title, text, images }) => (
+			{project.results?.filter(({ images }) => images.length).map(({ title, text, images }) => (
 				<section class="step">
 					<h2 class="step__title">{title}</h2>
 					<ImageStrip images={images} label={`${title} images`} caption={text} large />
 					{text && <p class="step__text">{text}</p>}
 				</section>
 			))}
+			{project.video && project.videoLast && (
+				<section class="step step--video">
+					{project.videoTitle && <h2 class="step__title">{project.videoTitle}</h2>}
+					<video
+						class="result__video"
+						src={`${project.video}#t=0.1`}
+						controls
+						playsinline
+						preload="metadata"
+						aria-label={`${project.title} video`}
+					/>
+					{project.videoText && <p class="step__text">{project.videoText}</p>}
+				</section>
+			)}
 			{project.website && project.results?.length ? (
 				<div class="result__visit">
-					<VisitLink href={project.website} />
+					<VisitLink href={project.website} label={project.websiteLabel} />
 				</div>
 			) : null}
 			{!project.video && !project.results?.length && <p class="project__soon">more coming soon!</p>}

@@ -15,6 +15,15 @@ export const tools = {
 	illustrator: { name: 'Adobe Illustrator', short: 'Ai', bg: '#330000', fg: '#ff9a00' },
 	indesign: { name: 'Adobe InDesign', short: 'Id', bg: '#49021f', fg: '#ff3366' },
 	lightroom: { name: 'Adobe Lightroom', short: 'Lr', bg: '#001e36', fg: '#31a8ff' },
+	audition: { name: 'Adobe Audition', short: 'Au', bg: '#00005b', fg: '#9999ff' },
+	vscode: {
+		name: 'Visual Studio Code',
+		bg: '#1e1e1e',
+		svg: `<path d="M33 8l7 3.4v25.2L33 40 15.5 25.6 9 30.6 6.5 29.3V18.7L9 17.4l6.5 5L33 8z" fill="#0065a9"/>
+		<path d="M33 8l7 3.4v25.2L33 40V8z" fill="#007acc"/>
+		<path d="M33 16.5L21.5 24 33 31.5z" fill="#1e1e1e"/>
+		<path d="M9 21.5L13 24l-4 2.5z" fill="#1e1e1e"/>`,
+	},
 	figma: {
 		name: 'Figma',
 		bg: '#1e1e1e',

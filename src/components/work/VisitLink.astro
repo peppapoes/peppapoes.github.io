@@ -1,15 +1,16 @@
 ---
-/** Pink "visit website" label linking to a project's live site; typed out again on hover, like the logo. */
+/** Pink label linking out (by default "visit website"); typed out again on hover, like the logo. */
 interface Props {
 	href: string;
+	label?: string;
 }
 
-const { href } = Astro.props;
+const { href, label = 'visit website' } = Astro.props;
 ---
 
-<a class="project__visit" href={href} target="_blank" rel="noopener noreferrer" aria-label="Visit website">
+<a class="project__visit" href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
 	<span aria-hidden="true">
-		{[...'visit website'].map((letter, i) => <span class="project__visit-letter" style={`--i: ${i}`}>{letter}</span>)}
+		{[...label].map((letter, i) => <span class="project__visit-letter" style={`--i: ${i}`}>{letter}</span>)}
 	</span>
 	<svg viewBox="0 0 100 16" aria-hidden="true"><path d="M0 8H98M90 1l8 7-8 7" /></svg>
 </a>

@@ -132,6 +132,27 @@ const stars = [
 		padding-left: 0.1em;
 	}
 
+	/* The two lines slide in from the left edge, like the name in the home intro. */
+	.work__title :global(.work__title-my),
+	.work__title > span:last-child {
+		animation: slide-in 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	}
+
+	.work__title > span:last-child {
+		animation-delay: 0.12s;
+	}
+
+	@keyframes slide-in {
+		from { translate: -70vw 0; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.work__title :global(.work__title-my),
+		.work__title > span:last-child {
+			animation: none;
+		}
+	}
+
 	.filters {
 		display: flex;
 		flex-wrap: wrap;

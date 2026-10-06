@@ -5,11 +5,12 @@
  * With `layout="wall"` the images fill a few columns instead, nothing to scroll.
  * With `layout="board"` they fill justified rows (every row exactly as wide as the
  * others), with an optional large `feature` image beside them and a `palette` underneath.
+ * With `collage` every image gets its own spot, exactly as in a design (stacked on phones).
  * Clicking an image opens it large in a popup, with arrows to browse the row
  * and the row's caption underneath.
  */
 import { Image, getImage } from 'astro:assets';
-import type { ProjectImage } from '../../data/projects';
+import type { CollageItem, ProjectImage } from '../../data/projects';
 
 interface Props {
 	images: ProjectImage[];
@@ -20,10 +21,13 @@ interface Props {
 	/** Bigger images, for the end result. */
 	large?: boolean;
 	feature?: ProjectImage;
+	collage?: { size: [number, number]; items: CollageItem[] };
 	palette?: ProjectImage;
 }
 
-const { images, label, caption, layout = 'row', feature, palette, large = false } = Astro.props;
+const { images: given, label, caption, layout: given_layout = 'row', feature, palette, large = false, collage } = Astro.props;
+const images = collage ? collage.items : given;
+const layout = collage ? 'collage' : given_layout;
 
 // The large version for the popup.
 const withFull = (list: ProjectImage[]) =>
@@ -35,8 +39,20 @@ const sizes = layout === 'row' ? '30vw' : '(max-width: 640px) 45vw, 20vw';
 const portrait = large && layout === 'row' && images.every(({ src }) => src.height > src.width * 1.4);
 ---
 
-<div class:list={['strip', `strip--${layout}`, { 'strip--large': large, 'strip--portrait': portrait }]} data-strip={layout} role="region" aria-label={label}>
-	{layout === 'board' ? (
+<div class:list={['strip', `strip--${layout}`, { 'strip--large': large, 'strip--portrait': portrait, 'strip--solo': layout === 'board' && !feature, 'strip--single': layout === 'wall' && images.length === 1 }]} data-strip={layout} role="region" aria-label={label} style={collage ? `--collage-ratio: ${collage.size[0]} / ${collage.size[1]}` : undefined}>
+	{collage ? (
+		collage.items.map(({ src, alt, at: [x, y, w, h], fit }, i) => (
+			<button
+				class:list={['strip__item', 'collage__item', { 'collage__item--contain': fit === 'contain' }]}
+				type="button"
+				data-full={items[i].full.src}
+				aria-label={`View larger: ${alt}`}
+				style={`left: ${(x / collage.size[0]) * 100}%; top: ${(y / collage.size[1]) * 100}%; width: ${(w / collage.size[0]) * 100}%; height: ${(h / collage.size[1]) * 100}%`}
+			>
+				<Image src={src} alt={alt} widths={[400, 800]} sizes="(max-width: 800px) 45vw, 25vw" loading="lazy" draggable="false" />
+			</button>
+		))
+	) : layout === 'board' ? (
 		<>
 			<div class="board__wall">
 				{items.map(({ src, alt, full }) => (
@@ -55,7 +71,7 @@ const portrait = large && layout === 'row' && images.every(({ src }) => src.heig
 	) : (
 		items.map(({ src, alt, full }) => (
 			<button class="strip__item" type="button" data-full={full.src} aria-label={`View larger: ${alt}`}>
-				<Image src={src} alt={alt} widths={[400, 800, 1200]} sizes={sizes} loading="lazy" draggable="false" />
+				<Image src={src} alt={alt} widths={[400, 800, 1200]} sizes={images.length === 1 ? '(max-width: 1200px) 92vw, 72rem' : sizes} loading="lazy" draggable="false" />
 			</button>
 		))
 	)}
@@ -247,15 +263,66 @@ const portrait = large && layout === 'row' && images.every(({ src }) => src.heig
 		height: auto;
 	}
 
+	/* A single image (like one styleboard) is shown large, across the page. */
+	.strip--wall.strip--single {
+		columns: 1;
+		max-width: 72rem;
+	}
+
 	@media (max-width: 1000px) {
-		.strip--wall {
+		.strip--wall:not(.strip--single) {
 			columns: 3;
 		}
 	}
 
 	@media (max-width: 640px) {
-		.strip--wall {
+		.strip--wall:not(.strip--single) {
 			columns: 2;
+		}
+	}
+
+	/* A collage: every image at its spot from the design, scaled with the width. */
+	.strip--collage {
+		position: relative;
+		display: block;
+		aspect-ratio: var(--collage-ratio);
+		margin-right: 0;
+		padding-right: 0;
+		overflow: visible;
+		cursor: auto;
+	}
+
+	.collage__item {
+		position: absolute;
+	}
+
+	.strip--collage .strip__item img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.strip--collage .collage__item--contain img {
+		object-fit: contain;
+	}
+
+	/* On phones the images stack in two columns instead. */
+	@media (max-width: 800px) {
+		.strip--collage {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.6rem;
+			aspect-ratio: auto;
+		}
+
+		.collage__item {
+			position: static;
+			width: auto !important;
+			height: auto !important;
+		}
+
+		.strip--collage .strip__item img {
+			height: auto;
 		}
 	}
 
@@ -270,6 +337,11 @@ const portrait = large && layout === 'row' && images.every(({ src }) => src.heig
 		padding-right: 0;
 		overflow: visible;
 		cursor: auto;
+	}
+
+	/* Without a large image the rows take the full width. */
+	.strip--solo {
+		grid-template-columns: minmax(0, 1fr);
 	}
 
 	.board__wall {
@@ -305,10 +377,14 @@ const portrait = large && layout === 'row' && images.every(({ src }) => src.heig
 		inset: 0;
 	}
 
+	/* Always the same height, so a short palette stays small and a long one fills the width. */
 	.board__palette {
 		grid-column: 1 / -1;
-		width: 100%;
-		height: auto;
+		width: auto;
+		max-width: 100%;
+		height: clamp(3.5rem, 5.5vw, 5rem);
+		object-fit: contain;
+		object-position: left;
 	}
 
 	@media (max-width: 800px) {
