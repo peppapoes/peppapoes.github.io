@@ -66,15 +66,22 @@ export interface Project {
 	/** One string per paragraph. */
 	idea?: string[];
 	tools?: Tool[];
+	/** The live site, linked from a label on the photo on the project page. */
+	website?: string;
 	/** Images in the frame on the project page; falls back to the preview. */
 	gallery?: ProjectImage[];
 	/** "Process" tab: per step an optional text and a scrollable row of images. */
 	process?: { title: string; text?: string; images: ProjectImage[] }[];
-	/** "End result" tab on the project page: a video and/or rows of images, like the process steps. */
+	/** "End result" tab on the project page: a video (with an optional title and text) and/or rows of images, like the process steps. */
 	video?: string;
+	videoTitle?: string;
+	videoText?: string;
 	results?: { title: string; text?: string; images: ProjectImage[] }[];
 	/** "Inspiration" tab: a wall of images in columns. */
 	inspiration?: ProjectImage[];
+	/** Optional for the "Inspiration" tab: one large image beside the others, and a colour palette under them. */
+	inspirationFeature?: ProjectImage;
+	inspirationPalette?: ProjectImage;
 }
 
 export type ProjectImage = { src: ImageMetadata; alt: string };
@@ -111,17 +118,32 @@ export const projects: Project[] = [
 		preview: kickstarter,
 		previewAlt: 'Mug and hexagon soap bar: Second life espresso scrub, support us on Kickstarter',
 		video: kickstarterVideo,
-		assignment: 'Pick a Kickstarter project and make a promoting video for it.',
+		videoTitle: 'Finished product',
+		videoText:
+			'My video turned into a piece full of collage techniques, playfulness, movement and colour. The voice-over makes the message so much clearer and stronger, especially combined with the fresh music. I learned a lot about how a video can be put together to hold the viewer’s attention. The same goes for sound: small sound effects take a product to the next level, and I really noticed that in this project.',
+		assignment:
+			'Make a promo video for a Kickstarter project, using all kinds of techniques in After Effects and working in Audition for the sound.',
 		idea: [
-			'The word “game” always makes me happy. I love giving users something interactive to do with my digital work, whether it’s small interactions on a website or full-on conversations with Napoleon Bonaparte in a Figma prototype, as long as there’s an experience to be had.',
-			'For this project, I created a cat-themed click game called CatVolution, where cats evolve based on your clicks and merges. I also added upgrades and a “golden poop” bonus for extra clicks. Feel free to play CatVolution if you’re ever bored!',
+			'Choosing a Kickstarter project was a challenge in itself. Many projects relied on visuals that were too complex to dive into with little experience. Then I came across the Second Life espresso scrub and immediately saw the real story behind it: giving something a second life.',
+			'That became my anchor for telling a clear and appealing story in a video. I chose a collage-like style because it has a recycled feel to it, which made it a perfect fit. Take a look at my process and the result below!',
 		],
 		tools: ['after-effects', 'photoshop'],
 		process: [
-			// TODO: replace the placeholder texts.
-			{ title: 'Storyboard', text: 'Placeholder: a short description of the storyboard comes here.', images: series('storyboard', 4, 'png', 'Storyboard page') },
-			{ title: 'Styleframes', text: 'Placeholder: a short description of the styleframes comes here.', images: series('styleframe', 3, 'png', 'Styleframe') },
-			{ title: 'Pitch deck', text: 'Placeholder: a short description of the pitch deck comes here.', images: series('pitchdeck', 11, 'png', 'Pitch deck slide') },
+			{
+				title: 'Storyboard',
+				text: 'My storyboard consists of 21 carefully selected scenes, complemented by a script. This is where I decided to use a voice-over and worked out which match cuts to add.',
+				images: series('storyboard', 4, 'png', 'Storyboard page'),
+			},
+			{
+				title: 'Styleframes',
+				text: 'I went for a collage-like style with a bold colour palette. It felt like a natural fit for a product built around recycling, and I wanted that to come through in the styling of the video.',
+				images: series('styleframe', 3, 'png', 'Styleframe'),
+			},
+			{
+				title: 'Pitch deck',
+				text: 'My pitch deck shows all the preparation behind the project: the storytelling, sketches, inspiration and voice-over scripts.',
+				images: series('pitchdeck', 11, 'png', 'Pitch deck slide'),
+			},
 		],
 		inspiration: folder('kickstarter-inspiration', 'Kickstarter inspiration'),
 	},
@@ -164,10 +186,29 @@ export const projects: Project[] = [
 		year: 2026,
 	},
 	{
-		slug: 'walter-van-beirendonck',
-		title: 'Walter Van Beirendonck',
+		slug: 'momu-antwerp',
+		title: 'MoMu Antwerp',
 		category: 'integration',
 		year: 2026,
+		preview: image('mockup-wvb.jpg'),
+		previewAlt: 'Mockup of the MoMu Antwerp website about Walter Van Beirendonck',
+		website: 'https://delatterfemke.be/outofmeasure/',
+		assignment:
+			'Design a detail page that puts a designer in the spotlight within MoMu, the Fashion Museum of Antwerp, and sparks curiosity for the exhibition. Visual design, UX and code all matter equally in this assignment, and each had to be fully worked out.',
+		idea: [
+			'I chose Walter Van Beirendonck, one of the Antwerp Six designers. I set out to put his collections “W.A.R.” and “Why Is a Raven Like a Writing Desk?” in the spotlight with a fairly hard, punky atmosphere.',
+			'I tried to bring out the heavier side of Walter by adding animations that make you part of the collection and of the way he thinks.',
+		],
+		// A board: the moodboard beside the others, the colour palette underneath (the tiny font sample is left out).
+		inspiration: folder('wvb-inspiration', 'MoMu Antwerp inspiration').filter(
+			({ src }) => ![image('wvb-inspiration/Group 132.png'), image('wvb-inspiration/Group 133.png'), image('wvb-inspiration/font_ Zuume.png')].includes(src),
+		),
+		inspirationFeature: { src: image('wvb-inspiration/Group 132.png'), alt: 'Moodboard of magazine spreads with “Walter Van Beirendonck” in bold type' },
+		inspirationPalette: { src: image('wvb-inspiration/Group 133.png'), alt: 'Colour palette: #DCCC00, #E54887, #3B77B3, #252525 and #56C37B' },
+		results: [
+			{ title: 'Desktop', images: folder('wvb-resultsdesktop', 'MoMu Antwerp website on desktop, screen') },
+			{ title: 'Mobile', images: folder('wvb-resultsmobile', 'MoMu Antwerp website on mobile, screen') },
+		],
 	},
 ];
 

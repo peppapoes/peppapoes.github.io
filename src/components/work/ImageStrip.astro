@@ -3,6 +3,8 @@
  * A row of small images that scrolls sideways and bleeds off the right edge of
  * the page. Scroll with a trackpad or shift + wheel, or drag it with the mouse.
  * With `layout="wall"` the images fill a few columns instead, nothing to scroll.
+ * With `layout="board"` they fill justified rows (every row exactly as wide as the
+ * others), with an optional large `feature` image beside them and a `palette` underneath.
  * Clicking an image opens it large in a popup, with arrows to browse the row
  * and the row's caption underneath.
  */
@@ -14,23 +16,49 @@ interface Props {
 	label: string;
 	/** Shown under the large image in the popup, the same for every image in the row. */
 	caption?: string;
-	layout?: 'row' | 'wall';
+	layout?: 'row' | 'wall' | 'board';
+	/** Bigger images, for the end result. */
+	large?: boolean;
+	feature?: ProjectImage;
+	palette?: ProjectImage;
 }
 
-const { images, label, caption, layout = 'row' } = Astro.props;
+const { images, label, caption, layout = 'row', feature, palette, large = false } = Astro.props;
 
 // The large version for the popup.
-const items = await Promise.all(
-	images.map(async ({ src, alt }) => ({ src, alt, full: await getImage({ src, width: Math.min(src.width, 2000) }) })),
-);
+const withFull = (list: ProjectImage[]) =>
+	Promise.all(list.map(async ({ src, alt }) => ({ src, alt, full: await getImage({ src, width: Math.min(src.width, 2000) }) })));
+const items = await withFull(images);
+const [featureItem] = feature ? await withFull([feature]) : [];
+const sizes = layout === 'row' ? '30vw' : '(max-width: 640px) 45vw, 20vw';
+// In a large row, upright images (like phone screens) get extra height, so they don't look tiny.
+const portrait = large && layout === 'row' && images.every(({ src }) => src.height > src.width * 1.4);
 ---
 
-<div class:list={['strip', { 'strip--wall': layout === 'wall' }]} data-strip={layout} role="region" aria-label={label}>
-	{items.map(({ src, alt, full }) => (
-		<button class="strip__item" type="button" data-full={full.src} aria-label={`View larger: ${alt}`}>
-			<Image src={src} alt={alt} widths={[400, 800, 1200]} sizes={layout === 'wall' ? '(max-width: 640px) 45vw, 20vw' : '30vw'} loading="lazy" draggable="false" />
-		</button>
-	))}
+<div class:list={['strip', `strip--${layout}`, { 'strip--large': large, 'strip--portrait': portrait }]} data-strip={layout} role="region" aria-label={label}>
+	{layout === 'board' ? (
+		<>
+			<div class="board__wall">
+				{items.map(({ src, alt, full }) => (
+					<button class="strip__item" type="button" data-full={full.src} aria-label={`View larger: ${alt}`} style={`--ratio: ${(src.width / src.height).toFixed(3)}`}>
+						<Image src={src} alt={alt} widths={[400, 800]} sizes={sizes} loading="lazy" draggable="false" />
+					</button>
+				))}
+			</div>
+			{featureItem && (
+				<button class="strip__item board__feature" type="button" data-full={featureItem.full.src} aria-label={`View larger: ${featureItem.alt}`}>
+					<Image src={featureItem.src} alt={featureItem.alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 35vw" loading="lazy" draggable="false" />
+				</button>
+			)}
+			{palette && <Image class="board__palette" src={palette.src} alt={palette.alt} widths={[800, 1400, 2000]} sizes="92vw" loading="lazy" />}
+		</>
+	) : (
+		items.map(({ src, alt, full }) => (
+			<button class="strip__item" type="button" data-full={full.src} aria-label={`View larger: ${alt}`}>
+				<Image src={src} alt={alt} widths={[400, 800, 1200]} sizes={sizes} loading="lazy" draggable="false" />
+			</button>
+		))
+	)}
 </div>
 
 <dialog class="lightbox" aria-label={label}>
@@ -68,7 +96,7 @@ const items = await Promise.all(
 			setTimeout(() => (dragged = false));
 		};
 		strip.addEventListener('pointerdown', (e) => {
-			if (e.pointerType !== 'mouse' || e.button !== 0 || strip.dataset.strip === 'wall') return;
+			if (e.pointerType !== 'mouse' || e.button !== 0 || strip.dataset.strip !== 'row') return;
 			pressed = true;
 			dragged = false;
 			startX = e.clientX;
@@ -184,6 +212,14 @@ const items = await Promise.all(
 		transition: opacity 0.2s ease;
 	}
 
+	.strip--large .strip__item img {
+		height: clamp(11rem, 24vw, 23rem);
+	}
+
+	.strip--portrait .strip__item img {
+		height: clamp(17rem, 34vw, 32rem);
+	}
+
 	.strip__item:hover img {
 		opacity: 0.8;
 	}
@@ -220,6 +256,68 @@ const items = await Promise.all(
 	@media (max-width: 640px) {
 		.strip--wall {
 			columns: 2;
+		}
+	}
+
+	/* A board: justified rows on the left (each image grows with its proportions,
+	   so every row is equally wide), a large image on the right, the palette below. */
+	.strip--board {
+		--gap: clamp(0.5rem, 1vw, 0.9rem);
+		display: grid;
+		grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+		gap: var(--gap);
+		margin-right: 0;
+		padding-right: 0;
+		overflow: visible;
+		cursor: auto;
+	}
+
+	.board__wall {
+		display: flex;
+		flex-wrap: wrap;
+		align-content: start;
+		gap: var(--gap);
+	}
+
+	.board__wall::after {
+		content: '';
+		flex-grow: 1000; /* the last row doesn't stretch its few images */
+	}
+
+	.board__wall .strip__item {
+		flex: var(--ratio) 1 calc(var(--ratio) * clamp(8rem, 12.5vw, 12.5rem));
+	}
+
+	.strip--board .strip__item img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	/* As tall as the rows beside it, cropped to fit. */
+	.board__feature {
+		position: relative;
+		min-height: 18rem;
+	}
+
+	.strip--board .board__feature img {
+		position: absolute;
+		inset: 0;
+	}
+
+	.board__palette {
+		grid-column: 1 / -1;
+		width: 100%;
+		height: auto;
+	}
+
+	@media (max-width: 800px) {
+		.strip--board {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.board__feature {
+			aspect-ratio: 4 / 5;
 		}
 	}
 

@@ -1,4 +1,5 @@
 ---
+import SelectionFrame from '../SelectionFrame.astro';
 import SelectionTag from '../SelectionTag.astro';
 import Star from '../Star.astro';
 import ProjectPreview from './ProjectPreview.astro';
@@ -15,30 +16,71 @@ type Phone = { order: number; x: number; gap: number };
 const tags: { label: string; x: number; y: number; depth: number; phone: Phone; category?: Category; intro?: boolean }[] = [
 	{ label: 'Visual Design', x: 19, y: 22, depth: 14, phone: { order: 1, x: 15, gap: 0 }, category: 'visual-design' },
 	{ label: 'My portfolio', x: 71.5, y: 20, depth: 10, phone: { order: 2, x: 63, gap: 1.5 }, intro: true },
-	{ label: 'Integration of all courses', x: 47, y: 50, depth: 18, phone: { order: 5, x: 38, gap: 5.5 }, category: 'integration' },
+	{ label: 'Integration of all courses', x: 52, y: 43, depth: 18, phone: { order: 5, x: 38, gap: 5.5 }, category: 'integration' },
 	{ label: 'Motion Design', x: 76.5, y: 67, depth: 12, phone: { order: 3, x: 37, gap: 2.5 }, category: 'motion-design' },
 	{ label: 'Coding & Development', x: 9, y: 75, depth: 16, phone: { order: 4, x: 10, gap: 5.3 }, category: 'coding' },
 ];
 
 // On phones the stars get their own spot (`phone`: % from the left, rem from the top).
+// During the intro they gather around Femke's name (`intro`, in % of the hero).
 const stars = [
-	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline', depth: 30, phone: { x: 91, y: 3.8 } },
-	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled', depth: 40, phone: { x: 27, y: 10.1 } },
-	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled', depth: 24, phone: { x: 82, y: 21.6 } },
-	{ x: 5, y: 57, size: '2.4vw', variant: 'outline-alt', depth: 34, phone: { x: 11, y: 26.6 } },
-	{ x: 62, y: 85, size: '2.4vw', variant: 'outline', depth: 28, phone: { x: 52, y: 36.3 } },
+	{ x: 47.5, y: 15, size: '2.6vw', variant: 'outline', depth: 30, phone: { x: 91, y: 3.8 }, intro: { x: 48, y: 22 } },
+	{ x: 92.5, y: 26, size: '3.2vw', variant: 'filled', depth: 40, phone: { x: 27, y: 10.1 }, intro: { x: 71, y: 35 } },
+	{ x: 34.5, y: 48, size: '1.6vw', variant: 'filled', depth: 24, phone: { x: 82, y: 21.6 }, intro: { x: 29, y: 61 } },
+	{ x: 5, y: 57, size: '2.4vw', variant: 'outline-alt', depth: 34, phone: { x: 11, y: 26.6 }, intro: { x: 25, y: 33 } },
+	{ x: 62, y: 85, size: '2.4vw', variant: 'outline', depth: 28, phone: { x: 52, y: 36.3 }, intro: { x: 63, y: 71 } },
 ] as const;
 
-/** Inline custom properties for one floating element; `i` staggers the bobbing. */
+/** Inline custom properties for one floating element; `i` staggers the bobbing and, after the intro, the appearing. */
 const floatStyle = (x: number, y: number, depth: number, i: number) =>
-	`left: ${x}%; top: ${y}%; --depth: ${depth}; --bob-duration: ${5 + (i % 3)}s; --bob-delay: -${i * 1.3}s`;
+	`left: ${x}%; top: ${y}%; --x: ${x}%; --y: ${y}%; --depth: ${depth}; --bob-duration: ${5 + (i % 3)}s; --bob-delay: -${i * 1.3}s; --appear: ${(0.45 + i * 0.08).toFixed(2)}s`;
+
+// The little "(selected work)" note between the tags.
+const note = { x: 32, y: 56, depth: 8, phone: { order: 6, x: 40, gap: 3 } };
 const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x: ${x}%; --p-gap: ${gap}rem`;
 ---
+
+<!--
+	Intro, once per visit: the stars huddle around Femke's name, then the name slides
+	apart to both sides while the stars spread out and the tags appear. Runs before
+	the hero is drawn, so the page never shows without it first; a click, key, scroll
+	or tap skips it. Not with reduced motion.
+-->
+<script is:inline>
+	(() => {
+		const root = document.documentElement;
+		try {
+			if (sessionStorage.getItem('intro-seen') || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			sessionStorage.setItem('intro-seen', '1');
+		} catch {
+			return;
+		}
+		root.setAttribute('data-intro', '');
+		const skips = ['wheel', 'keydown', 'pointerdown', 'touchstart'];
+		const end = () => {
+			root.removeAttribute('data-intro');
+			skips.forEach((type) => removeEventListener(type, end));
+		};
+		skips.forEach((type) => addEventListener(type, end, { passive: true }));
+		setTimeout(end, 1900);
+	})();
+</script>
 
 <section class="hero" aria-label="Intro" data-hero>
 	<h1 class="visually-hidden">Femke De Latter — design portfolio</h1>
 
 	<Starfield count={170} seed={3} parallax />
+
+	<p class="hero__name" aria-hidden="true">
+		<SelectionFrame as="span" accent class="hero__first">FEMKE</SelectionFrame>
+		<span class="hero__last">DE LATTER</span>
+	</p>
+
+	<div class="float float--note" style={`${floatStyle(note.x, note.y, note.depth, tags.length)}; ${phoneTagStyle(note.phone)}`}>
+		<div class="float__inner">
+			<p class="hero__note">(selected work)</p>
+		</div>
+	</div>
 
 	{tags.map(({ label, x, y, depth, phone, category, intro }, i) => {
 		const project = category && featuredProject(category);
@@ -72,8 +114,11 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 		);
 	})}
 
-	{stars.map(({ x, y, size, variant, depth, phone }, i) => (
-		<div class="float float--star" style={`${floatStyle(x, y, depth, i + tags.length)}; --p-x: ${phone.x}%; --p-y: ${phone.y}rem`}>
+	{stars.map(({ x, y, size, variant, depth, phone, intro }, i) => (
+		<div
+			class="float float--star"
+			style={`${floatStyle(x, y, depth, i + tags.length)}; --p-x: ${phone.x}%; --p-y: ${phone.y}rem; --intro-x: ${intro.x}%; --intro-y: ${intro.y}%`}
+		>
 			<div class="float__inner">
 				<Star variant={variant} size={`max(${size}, 1rem)`} />
 			</div>
@@ -275,7 +320,110 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 		translate:
 			calc(var(--mx) * var(--depth) * 1px + var(--push-x, 0px))
 			calc(var(--my) * var(--depth) * 1px + var(--push-y, 0px));
-		transition: translate 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+		transition:
+			translate 1.2s cubic-bezier(0.2, 0.7, 0.2, 1),
+			left 1.4s cubic-bezier(0.65, 0, 0.35, 1),
+			top 1.4s cubic-bezier(0.65, 0, 0.35, 1),
+			opacity 0.6s ease var(--appear),
+			scale 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) var(--appear);
+	}
+
+	.hero__note {
+		margin: 0;
+		font-family: var(--font-hand);
+		font-size: var(--text-subtitle);
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+	}
+
+	/* The intro (see the script above). Femke's name in the middle, as on the about page… */
+	.hero__name {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		z-index: 6;
+		display: grid;
+		justify-items: start;
+		gap: 0.1em;
+		margin: 0;
+		color: var(--color-accent);
+		font-size: clamp(2.75rem, 6.3vw, 6rem);
+		font-weight: 700;
+		line-height: 0.85;
+		letter-spacing: -0.04em;
+		white-space: nowrap;
+		translate: -50% -50%;
+		pointer-events: none;
+		visibility: hidden;
+		transition: visibility 0s linear 1.2s;
+	}
+
+	.hero__name :global(.hero__first) {
+		--handle: 0.14em;
+		padding: 0.1em 0.12em 0.02em;
+	}
+
+	.hero__name > span:last-child {
+		padding-left: 0.1em;
+	}
+
+	/* …whose halves leave towards both sides when the intro ends. */
+	.hero__name :global(.hero__first),
+	.hero__name > span:last-child {
+		opacity: 0;
+		transition:
+			translate 1.1s cubic-bezier(0.7, 0, 0.3, 1),
+			opacity 0.5s ease 0.6s;
+	}
+
+	.hero__name :global(.hero__first) {
+		translate: -75vw 0;
+	}
+
+	.hero__name > span:last-child {
+		translate: 75vw 0;
+	}
+
+	:global(html[data-intro]) .hero__name {
+		visibility: visible;
+		transition: none;
+		animation: name-in 0.7s ease both;
+	}
+
+	:global(html[data-intro]) .hero__name :global(.hero__first),
+	:global(html[data-intro]) .hero__name > span:last-child {
+		opacity: 1;
+		translate: none;
+		transition: none;
+	}
+
+	@keyframes name-in {
+		from { opacity: 0; scale: 0.96; }
+	}
+
+	/* Meanwhile the tags and the note wait, and the header with them. */
+	:global(html[data-intro]) .float:not(.float--star) {
+		opacity: 0;
+		scale: 0.9;
+		pointer-events: none;
+	}
+
+	:global(.header) {
+		transition: opacity 0.6s ease 0.5s;
+	}
+
+	:global(html[data-intro] .header) {
+		opacity: 0;
+		transition: none;
+	}
+
+	/* The stars huddle around the name (`intro` positions, clear of the letters),
+	   then drift out to their places. */
+	@media (min-width: 641px) {
+		:global(html[data-intro]) .float--star {
+			left: var(--intro-x) !important;
+			top: var(--intro-y) !important;
+		}
 	}
 
 	.float[data-open] {
@@ -338,7 +486,8 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 	@media (prefers-reduced-motion: reduce) {
 		.float,
-		.float__inner {
+		.float__inner,
+		.hero__name {
 			transition: none;
 		}
 
@@ -367,7 +516,11 @@ const phoneTagStyle = ({ order, x, gap }: Phone) => `--p-order: ${order}; --p-x:
 
 		.float {
 			translate: none;
-			transition: none;
+			transition: opacity 0.6s ease var(--appear);
+		}
+
+		.float--note .hero__note {
+			margin-left: var(--p-x);
 		}
 
 		.float:not(.float--star) {

@@ -7,6 +7,7 @@ import SelectionFrame from '../../components/SelectionFrame.astro';
 import Star from '../../components/Star.astro';
 import ToolIcon from '../../components/work/ToolIcon.astro';
 import ImageStrip from '../../components/work/ImageStrip.astro';
+import VisitLink from '../../components/work/VisitLink.astro';
 import { categoryLabels, projects, type Project } from '../../data/projects';
 
 export const getStaticPaths = (() => projects.map((project) => ({ params: { slug: project.slug }, props: { project } }))) satisfies GetStaticPaths;
@@ -24,6 +25,7 @@ const images = project.gallery?.length
 		? [{ src: project.preview, alt: project.previewAlt ?? '' }]
 		: [];
 const hasText = Boolean(project.assignment || project.idea?.length);
+
 
 // Below the overview, every project page has the same tabs; each opens its topic
 // underneath (and closes it again). Topics without content yet say so.
@@ -58,6 +60,7 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 					{images.map(({ src, alt }) => (
 						<Image src={src} alt={alt} widths={[600, 1000, 1400]} sizes="(max-width: 800px) 92vw, 45vw" />
 					))}
+					{project.website && <VisitLink href={project.website} />}
 				</SelectionFrame>
 			)}
 
@@ -111,28 +114,43 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 
 		<section class="inspiration" {...panelAttrs('inspiration')}>
 			{project.inspiration?.length
-				? <ImageStrip images={project.inspiration} label="Inspiration images" layout="wall" />
+				? <ImageStrip
+						images={project.inspiration}
+						label="Inspiration images"
+						layout={project.inspirationFeature || project.inspirationPalette ? 'board' : 'wall'}
+						feature={project.inspirationFeature}
+						palette={project.inspirationPalette}
+					/>
 				: <p class="project__soon">more coming soon!</p>}
 		</section>
 
 		<section class="result" {...panelAttrs('end-result')}>
 			{project.video && (
-				<video
-					class="result__video"
-					src={`${project.video}#t=0.1`}
-					controls
-					playsinline
-					preload="metadata"
-					aria-label={`${project.title} video`}
-				/>
+				<section class="step step--video">
+					{project.videoTitle && <h2 class="step__title">{project.videoTitle}</h2>}
+					<video
+						class="result__video"
+						src={`${project.video}#t=0.1`}
+						controls
+						playsinline
+						preload="metadata"
+						aria-label={`${project.title} video`}
+					/>
+					{project.videoText && <p class="step__text">{project.videoText}</p>}
+				</section>
 			)}
 			{project.results?.map(({ title, text, images }) => (
 				<section class="step">
 					<h2 class="step__title">{title}</h2>
-					<ImageStrip images={images} label={`${title} images`} caption={text} />
+					<ImageStrip images={images} label={`${title} images`} caption={text} large />
 					{text && <p class="step__text">{text}</p>}
 				</section>
 			))}
+			{project.website && project.results?.length ? (
+				<div class="result__visit">
+					<VisitLink href={project.website} />
+				</div>
+			) : null}
 			{!project.video && !project.results?.length && <p class="project__soon">more coming soon!</p>}
 		</section>
 
@@ -338,9 +356,68 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		height: auto;
 	}
 
+	/* A pink label that links to the live site: on the photo, and under "End result". */
+	.project :global(.project__media .project__visit) {
+		position: absolute;
+		right: 1.6rem;
+		bottom: 1.6rem;
+	}
 
-	.step + .step,
-	.result__video + .step {
+	:global(.project__visit) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.35rem 0.8rem 0.45rem;
+		background: var(--color-accent);
+		color: var(--color-fg);
+		font-size: 1rem;
+		font-weight: 500;
+		letter-spacing: -0.02em;
+		text-decoration: none;
+		white-space: pre;
+	}
+
+	/* On hover the label is typed out again, letter by letter, like the logo. */
+	:global(.project__visit:hover .project__visit-letter),
+	:global(.project__visit:focus-visible .project__visit-letter) {
+		animation: type 0.01s calc(var(--i) * 60ms + 80ms) both;
+	}
+
+	@keyframes type {
+		from { opacity: 0; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		:global(.project__visit .project__visit-letter) {
+			animation: none !important;
+		}
+	}
+
+	:global(.project__visit svg) {
+		width: 2.5rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		transition: translate 0.3s ease;
+	}
+
+	:global(.project__visit:hover svg),
+	:global(.project__visit:focus-visible svg) {
+		translate: 0.35rem 0;
+	}
+
+	:global(.project__visit:focus-visible) {
+		outline: 1px solid var(--color-fg);
+		outline-offset: 3px;
+	}
+
+	.result__visit {
+		margin-top: clamp(2rem, 4vw, 3.5rem);
+		padding-left: 0.4rem;
+	}
+
+
+	.step + .step {
 		margin-top: clamp(2.5rem, 5vw, 4.5rem);
 	}
 
@@ -361,6 +438,28 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 		font-weight: 300;
 		line-height: 1.35;
 		letter-spacing: -0.02em;
+	}
+
+	/* The finished video on the left, its title and text beside it on the right. */
+	.step--video {
+		display: grid;
+		grid-template: 'video title' auto 'video text' 1fr / minmax(0, 1.4fr) minmax(14rem, 1fr);
+		column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+		align-items: start;
+	}
+
+	.step--video .result__video {
+		grid-area: video;
+	}
+
+	.step--video .step__title {
+		grid-area: title;
+	}
+
+	.step--video .step__text {
+		grid-area: text;
+		max-width: 28rem;
+		margin-top: 0;
 	}
 
 	/* Never taller than the screen, so the page below stays in view. */
@@ -453,6 +552,14 @@ const panelAttrs = (id: string) => ({ id: `panel-${id}`, 'aria-labelledby': `tab
 	}
 
 	@media (max-width: 800px) {
+		.step--video {
+			grid-template: 'title' 'video' 'text' / minmax(0, 1fr);
+		}
+
+		.step--video .step__text {
+			margin-top: 1.25rem;
+		}
+
 		.overview {
 			grid-template: 'heading' 'media' 'info' / minmax(0, 1fr);
 		}

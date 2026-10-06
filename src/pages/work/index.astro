@@ -92,6 +92,9 @@ const stars = [
 		grid-template-columns: 30vw minmax(0, 1fr);
 		align-items: start;
 		padding: clamp(1rem, 2.5vw, 2.5rem) var(--gutter) clamp(6rem, 12vw, 10rem) 0;
+		/* The stars sit at fixed heights; with a short (filtered) list they'd hang below
+		   the footer and stretch the page. (clip, unlike hidden, keeps the title sticky.) */
+		overflow: clip;
 	}
 
 	.work :global(.work__star) {
